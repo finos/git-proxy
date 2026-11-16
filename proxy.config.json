@@ -22,8 +22,34 @@
     }
   ],
   "limits": {
-    "maxPackSizeBytes": 1073741824
+    "maxPackSizeBytes": 1073741824,
+    "maxDecompressedPackSizeBytes": 134217728,
+    "maxDecompressedObjectSizeBytes": 67108864,
+    "maxPackExpansionRatio": 100,
+    "maxPackObjects": 100000
   },
+  "scmProviders": [
+    {
+      "name": "github",
+      "type": "github",
+      "host": "github.com"
+    },
+    {
+      "name": "gitlab",
+      "type": "gitlab",
+      "host": "gitlab.com"
+    },
+    {
+      "name": "codeberg",
+      "type": "forgejo",
+      "host": "codeberg.org"
+    },
+    {
+      "name": "gitea",
+      "type": "forgejo",
+      "host": "gitea.com"
+    }
+  ],
   "sink": [
     {
       "type": "fs",
@@ -38,6 +64,11 @@
         "tlsAllowInvalidCertificates": false,
         "ssl": true
       },
+      "enabled": false
+    },
+    {
+      "type": "postgres",
+      "connectionString": "postgresql://localhost:5432/gitproxy",
       "enabled": false
     }
   ],

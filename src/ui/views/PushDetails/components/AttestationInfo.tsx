@@ -15,106 +15,53 @@
  */
 
 import React from 'react';
-import moment from 'moment';
-import { CheckCircle } from '@material-ui/icons';
-import Tooltip from '@material-ui/core/Tooltip';
-import UserLink from '../../../components/UserLink/UserLink';
-import AttestationView from './AttestationView';
+import { DateTime } from 'luxon';
+import { Banner, Text } from '@primer/react';
+import UserDisplayLink from '../../../components/UserDisplayLink/UserDisplayLink';
 import { PushActionView } from '../../../types';
-import { CompletedAttestation } from '../../../../proxy/processors/types';
 
 interface AttestationInfoProps {
   push: PushActionView;
-  isGitHub: boolean;
-  attestation: boolean;
-  setAttestation: (value: boolean) => void;
 }
 
-const AttestationInfo: React.FC<AttestationInfoProps> = ({
-  push,
-  isGitHub,
-  attestation,
-  setAttestation,
-}) => {
+const AttestationInfo = ({ push }: AttestationInfoProps) => {
   if (!push.attestation || !push.authorised) {
     return null;
   }
 
+  const att = push.attestation;
+  const ts = DateTime.fromMillis(Number(att.timestamp));
+  const tsTitle = ts.toFormat('cccc, MMMM d yyyy, h:mm:ss a');
+  const presetDisplayName = att.reviewer.displayName?.trim() || undefined;
+
   return (
-    <div
-      style={{
-        background: '#eee',
-        padding: '10px 20px 10px 20px',
-        borderRadius: '10px',
-        color: 'black',
-        marginTop: '15px',
-        float: 'right',
-        position: 'relative',
-        textAlign: 'left',
-      }}
-    >
-      <span style={{ position: 'absolute', top: 0, right: 0 }}>
-        <CheckCircle
-          style={{
-            cursor: push.autoApproved ? 'default' : 'pointer',
-            transform: 'scale(0.65)',
-            opacity: push.autoApproved ? 0.5 : 1,
-          }}
-          onClick={() => {
-            if (!push.autoApproved) {
-              setAttestation(true);
-            }
-          }}
-          htmlColor='green'
-        />
-      </span>
-
-      {push.autoApproved ? (
-        <div style={{ paddingTop: '15px' }}>
-          <p>
-            <strong>Auto-approved by system</strong>
-          </p>
-        </div>
-      ) : (
-        <>
-          {isGitHub && (
-            <UserLink username={push.attestation.reviewer.username}>
-              <img
-                style={{ width: '45px', borderRadius: '20px' }}
-                src={`https://github.com/${push.attestation.reviewer.gitAccount}.png`}
-              />
-            </UserLink>
-          )}
-          <div>
-            <p>
-              {isGitHub && (
-                <UserLink username={push.attestation.reviewer.username}>
-                  {push.attestation.reviewer.gitAccount}
-                </UserLink>
-              )}
-              {!isGitHub && <UserLink username={push.attestation.reviewer.username} />} approved
-              this contribution
-            </p>
-          </div>
-        </>
-      )}
-
-      <Tooltip
-        title={moment(push.attestation.timestamp).format('dddd, MMMM Do YYYY, h:mm:ss a')}
-        arrow
+    <div className='w-full min-w-0'>
+      <Banner
+        variant='success'
+        layout='compact'
+        flush
+        description={
+          <Text as='span' className='text-sm text-(--fgColor-muted)' title={tsTitle}>
+            {ts.toLocaleString(DateTime.DATETIME_MED)}
+            <span className='text-(--fgColor-muted)'> · </span>
+            {ts.toRelative()}
+          </Text>
+        }
       >
-        <kbd style={{ color: 'black', float: 'right' }}>
-          {moment(push.attestation.timestamp).fromNow()}
-        </kbd>
-      </Tooltip>
-
-      {!push.autoApproved && (
-        <AttestationView
-          data={push.attestation as CompletedAttestation}
-          attestation={attestation}
-          setAttestation={setAttestation}
-        />
-      )}
+        <Banner.Title as='h2' className='!text-base'>
+          {push.autoApproved ? (
+            'Auto-approved by system'
+          ) : (
+            <span className='min-w-0'>
+              <UserDisplayLink
+                username={att.reviewer.username}
+                displayName={presetDisplayName || undefined}
+              />{' '}
+              approved this contribution
+            </span>
+          )}
+        </Banner.Title>
+      </Banner>
     </div>
   );
 };

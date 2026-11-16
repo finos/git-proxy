@@ -16,8 +16,9 @@
 
 import * as db from '../../db';
 import { PassportStatic } from 'passport';
-import { getAuthMethods } from '../../config';
-import { type UserInfoResponse } from 'openid-client';
+import { getAuthMethods, getOIDCClientSecret } from '../../config';
+import type { UserInfoResponse } from 'openid-client';
+import type { Request } from 'express';
 import { handleErrorAndLog } from '../../utils/errors';
 
 export const type = 'openidconnect';
@@ -25,7 +26,6 @@ export const type = 'openidconnect';
 export const configure = async (passport: PassportStatic): Promise<PassportStatic> => {
   // Use dynamic imports to avoid ESM/CommonJS issues
   const { discovery, fetchUserInfo } = await import('openid-client');
-  // @ts-expect-error - throws error due to missing type definitions
   const { Strategy } = await import('openid-client/passport');
 
   const authMethods = getAuthMethods();
@@ -35,7 +35,10 @@ export const configure = async (passport: PassportStatic): Promise<PassportStati
     throw new Error('Missing OIDC issuer in configuration');
   }
 
-  const { issuer, clientID, clientSecret, callbackURL, scope } = oidcConfig;
+  const { issuer, clientID, callbackURL, scope } = oidcConfig;
+  // The OIDC client secret is resolved from the GIT_PROXY_OIDC_CLIENT_SECRET
+  // environment variable (which takes precedence) or the config file.
+  const clientSecret = getOIDCClientSecret(oidcConfig);
 
   const server = new URL(issuer);
   let config;
@@ -111,7 +114,7 @@ export const handleUserAuthentication = async (
         oidcId: userInfo.sub,
       };
 
-      await db.createUser(newUser.username, '', newUser.email, 'Edit me', false, newUser.oidcId);
+      await db.createUser(newUser.username, '', newUser.email, false, newUser.oidcId);
       return done(null, newUser);
     }
 

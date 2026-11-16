@@ -19,7 +19,7 @@ import { getUserInfo } from '../services/auth';
 import { PublicUser } from '../../db/types';
 import { AuthContext } from '../context';
 
-export const AuthProvider: React.FC<React.PropsWithChildren<object>> = ({ children }) => {
+export const AuthProvider = ({ children }: React.PropsWithChildren) => {
   const [user, setUser] = useState<PublicUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 

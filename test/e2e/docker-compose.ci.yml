@@ -1,0 +1,8 @@
+services:
+  git-proxy:
+    build:
+      context: ../..
+      cache_from:
+        - type=gha
+      cache_to:
+        - type=gha,mode=max

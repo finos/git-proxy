@@ -16,6 +16,7 @@
 
 import { Action } from '../proxy/actions/Action';
 import MongoDBStore from 'connect-mongo';
+import { Store } from 'express-session';
 import { CompletedAttestation, Rejection } from '../proxy/processors/types';
 
 export type PushQuery = {
@@ -46,6 +47,32 @@ export type QueryValue = string | boolean | number | undefined;
 
 export type UserRole = 'canPush' | 'canAuthorise';
 
+/** Per-status push counts for a registered repository (matches Activity tabs except `all`). */
+export type RepoActivityTabCounts = {
+  pending: number;
+  approved: number;
+  canceled: number;
+  rejected: number;
+  error: number;
+};
+
+export const emptyRepoActivityTabCounts = (): RepoActivityTabCounts => ({
+  pending: 0,
+  approved: 0,
+  canceled: 0,
+  rejected: 0,
+  error: 0,
+});
+
+/** Tab counts and push timestamps keyed by canonical remote URL. */
+export type RepoPushRollupsByCanonicalUrl = {
+  tabCounts: Map<string, RepoActivityTabCounts>;
+  /** Largest `Action.timestamp` (ms) for pushes whose primary Activity tab is `pending`, per URL key. */
+  latestPendingReviewAtMs: Map<string, number>;
+  /** Largest `Action.timestamp` (ms) over all `type: push` rows per URL key. */
+  latestPushAtMs: Map<string, number>;
+};
+
 export type PublicKeyRecord = {
   key: string;
   name: string;
@@ -58,7 +85,25 @@ export class Repo {
   name: string;
   url: string;
   users: { canPush: string[]; canAuthorise: string[] };
+  /**
+   * ISO-8601; set on create, never overwritten thereafter.
+   * Existing repos missing this field are intentionally left unset here —
+   * backfill belongs in a follow-up versioned migration (Mongo: prefer
+   * `$toDate: "$_id"` over an epoch default). Do not reintroduce startup
+   * one-off backfills.
+   */
+  dateCreated?: string;
+  /**
+   * ISO-8601; set on create and bumped on repo metadata mutations.
+   * Same migration note as {@link Repo.dateCreated}.
+   */
+  lastModified?: string;
   _id?: string;
+  activity?: RepoActivityTabCounts;
+  /** Present when the repo has at least one push currently in the Activity Pending bucket. */
+  latestPendingReviewAtMs?: number;
+  /** Present when the repo has at least one recorded push in GitProxy. */
+  latestPushAtMs?: number;
 
   constructor(
     project: string,
@@ -66,32 +111,44 @@ export class Repo {
     url: string,
     users?: Record<UserRole, string[]>,
     _id?: string,
+    dateCreated?: string,
+    lastModified?: string,
   ) {
     this.project = project;
     this.name = name;
     this.url = url;
     this.users = users ?? { canPush: [], canAuthorise: [] };
     this._id = _id;
+    this.dateCreated = dateCreated;
+    this.lastModified = lastModified;
   }
 }
+
+/**
+ * Accounts a user holds on configured SCM providers, keyed by provider name
+ * (see `scmProviders` in the configuration) with the account handle as value.
+ * A push is attributed to a user when the credential it carries resolves, via
+ * the provider's API, to one of these handles.
+ */
+export type ScmIdentities = Record<string, string>;
 
 export class User {
   username: string;
   password: string | null; // null if oidcId is set
-  gitAccount: string;
+  scmIdentities: ScmIdentities;
   email: string;
   admin: boolean;
-  mustChangePassword?: boolean;
   oidcId?: string | null;
   publicKeys?: PublicKeyRecord[];
   displayName?: string | null;
   title?: string | null;
+  mustChangePassword?: boolean;
   _id?: string;
 
   constructor(
     username: string,
     password: string,
-    gitAccount: string,
+    scmIdentities: ScmIdentities,
     email: string,
     admin: boolean,
     oidcId: string | null = null,
@@ -100,7 +157,7 @@ export class User {
   ) {
     this.username = username;
     this.password = password;
-    this.gitAccount = gitAccount;
+    this.scmIdentities = scmIdentities;
     this.email = email;
     this.admin = admin;
     this.oidcId = oidcId ?? null;
@@ -109,44 +166,23 @@ export class User {
   }
 }
 
-export type Push = {
-  id: string;
-  allowPush: boolean;
-  authorised: boolean;
-  blocked: boolean;
-  blockedMessage: string;
-  branch: string;
-  canceled: boolean;
-  commitData: object;
-  commitFrom: string;
-  commitTo: string;
-  error: boolean;
-  method: string;
-  project: string;
-  rejected: boolean;
-  repo: string;
-  repoName: string;
-  tag?: string;
-  tagData?: object;
-  timepstamp: string;
-  type: string;
-  url: string;
-  user?: string;
-};
-
 export interface PublicUser {
   username: string;
   displayName: string;
   email: string;
   title: string;
-  gitAccount: string;
+  scmIdentities: ScmIdentities;
   admin: boolean;
+  activity?: RepoActivityTabCounts;
   mustChangePassword?: boolean;
 }
 
 export interface Sink {
-  getSessionStore: () => MongoDBStore | undefined;
+  getSessionStore: () => MongoDBStore | Store | undefined;
+  ensureSessionStoreReady?: () => Promise<void>;
+  getRepoPushRollupsByCanonicalUrl: () => Promise<RepoPushRollupsByCanonicalUrl>;
   getPushes: (query: Partial<PushQuery>) => Promise<Action[]>;
+  getPushesForUserProfile: (emailVariants: string[], profileUsername: string) => Promise<Action[]>;
   writeAudit: (action: Action) => Promise<void>;
   getPush: (id: string) => Promise<Action | null>;
   deletePush: (id: string) => Promise<void>;
@@ -158,6 +194,7 @@ export interface Sink {
   getRepoByUrl: (url: string) => Promise<Repo | null>;
   getRepoById: (_id: string) => Promise<Repo | null>;
   createRepo: (repo: Repo) => Promise<Repo>;
+  updateRepo: (repo: Partial<Repo>) => Promise<void>;
   addUserCanPush: (_id: string, user: string) => Promise<void>;
   addUserCanAuthorise: (_id: string, user: string) => Promise<void>;
   removeUserCanPush: (_id: string, user: string) => Promise<void>;
@@ -165,7 +202,7 @@ export interface Sink {
   deleteRepo: (_id: string) => Promise<void>;
   findUser: (username: string) => Promise<User | null>;
   findUserByEmail: (email: string) => Promise<User | null>;
-  findUserByGitAccount: (gitAccount: string) => Promise<User | null>;
+  findUserByScmIdentity: (provider: string, login: string) => Promise<User | null>;
   findUserByOIDC: (oidcId: string) => Promise<User | null>;
   findUserBySSHKey: (sshKey: string) => Promise<User | null>;
   getUsers: (query?: Partial<UserQuery>) => Promise<User[]>;
@@ -175,4 +212,8 @@ export interface Sink {
   addPublicKey: (username: string, publicKey: PublicKeyRecord) => Promise<void>;
   removePublicKey: (username: string, fingerprint: string) => Promise<void>;
   getPublicKeys: (username: string) => Promise<PublicKeyRecord[]>;
+  getAppliedMigrations: () => Promise<string[]>;
+  recordMigration: (id: string) => Promise<void>;
+  unrecordMigration: (id: string) => Promise<void>;
+  deriveCreatedAt: (id: string) => string | undefined;
 }

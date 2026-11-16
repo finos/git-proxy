@@ -293,22 +293,24 @@ export class ConfigLoader extends EventEmitter {
 
     console.log(`Using repository directory: ${repoDir}`);
 
-    // Clone or pull repository
+    const gitEnv = {
+      ...process.env,
+      // dont wait for credentials; the command should be sufficiently authed
+      // https://git-scm.com/docs/git#Documentation/git.txt-codeGITTERMINALPROMPTcode
+      GIT_TERMINAL_PROMPT: 'false',
+      ...(source.auth?.type === 'ssh'
+        ? {
+            GIT_SSH_COMMAND: `ssh -i ${source.auth.privateKeyPath}`,
+          }
+        : {}),
+    };
+    const gitOptions = { cwd: repoDir, env: gitEnv };
+
     if (!fs.existsSync(repoDir)) {
       console.log(`Cloning repository ${source.repository} to ${repoDir}`);
       const execOptions = {
         cwd: process.cwd(),
-        env: {
-          // dont wait for credentials; the command should be sufficiently authed
-          // https://git-scm.com/docs/git#Documentation/git.txt-codeGITTERMINALPROMPTcode
-          GIT_TERMINAL_PROMPT: 'false',
-          ...process.env,
-          ...(source.auth?.type === 'ssh'
-            ? {
-                GIT_SSH_COMMAND: `ssh -i ${source.auth.privateKeyPath}`,
-              }
-            : {}),
-        },
+        env: gitEnv,
       };
 
       try {
@@ -318,24 +320,36 @@ export class ConfigLoader extends EventEmitter {
         handleErrorAndThrow(error, 'Failed to clone repository');
       }
     } else {
-      console.log(`Pulling latest changes from ${source.repository}`);
+      console.log(`Fetching latest changes from ${source.repository}`);
       try {
-        await execFileAsync('git', ['pull'], { cwd: repoDir });
-        console.log('Repository pulled successfully');
+        await execFileAsync('git', ['fetch', '--prune', 'origin'], gitOptions);
+        console.log('Repository fetched successfully');
       } catch (error: unknown) {
-        handleErrorAndThrow(error, 'Failed to pull repository');
+        handleErrorAndThrow(error, 'Failed to fetch repository');
       }
     }
 
-    // Checkout specific branch if specified
-    if (source.branch) {
-      console.log(`Checking out branch: ${source.branch}`);
+    let branch = source.branch;
+    if (!branch) {
       try {
-        await execFileAsync('git', ['checkout', source.branch], { cwd: repoDir });
-        console.log(`Branch ${source.branch} checked out successfully`);
+        await execFileAsync('git', ['remote', 'set-head', 'origin', '--auto'], gitOptions);
+        const { stdout } = await execFileAsync(
+          'git',
+          ['symbolic-ref', 'refs/remotes/origin/HEAD'],
+          gitOptions,
+        );
+        branch = stdout.trim().slice('refs/remotes/origin/'.length);
       } catch (error: unknown) {
-        handleErrorAndThrow(error, `Failed to checkout branch ${source.branch}`);
+        return handleErrorAndThrow(error, 'Failed to resolve repository default branch');
       }
+    }
+
+    console.log(`Checking out branch: ${branch}`);
+    try {
+      await execFileAsync('git', ['checkout', '-f', '-B', branch, `origin/${branch}`], gitOptions);
+      console.log(`Branch ${branch} checked out successfully`);
+    } catch (error: unknown) {
+      handleErrorAndThrow(error, `Failed to checkout branch ${branch}`);
     }
 
     // Read and parse config file

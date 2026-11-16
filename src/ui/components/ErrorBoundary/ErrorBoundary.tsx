@@ -15,94 +15,33 @@
  */
 
 import React, { Component, ErrorInfo, PropsWithChildren, ReactNode, useState } from 'react';
-import Paper from '@material-ui/core/Paper';
-import Typography from '@material-ui/core/Typography';
-import Button from '@material-ui/core/Button';
-import Collapse from '@material-ui/core/Collapse';
-import { makeStyles } from '@material-ui/core/styles';
+import { Button, Label, Stack, Text } from '@primer/react';
 
 const IS_DEV = process.env.NODE_ENV !== 'production';
 
-const useStyles = makeStyles((theme) => ({
-  wrapper: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    height: '100%',
-    minHeight: '60vh',
-    padding: theme.spacing(2),
-  },
-  root: {
-    padding: theme.spacing(4),
-    borderLeft: `4px solid ${theme.palette.error.main}`,
-    maxWidth: 560,
-    width: '100%',
-  },
-  title: {
-    color: theme.palette.error.main,
-    marginBottom: theme.spacing(1),
-  },
-  message: {
-    marginBottom: theme.spacing(2),
-    color: theme.palette.text.secondary,
-  },
-  hint: {
-    marginBottom: theme.spacing(2),
-    color: theme.palette.text.secondary,
-    fontStyle: 'italic',
-  },
-  actions: {
-    display: 'flex',
-    gap: theme.spacing(1),
-    alignItems: 'center',
-    marginBottom: theme.spacing(1),
-  },
-  stack: {
-    marginTop: theme.spacing(2),
-    padding: theme.spacing(2),
-    backgroundColor: theme.palette.grey[100],
-    borderRadius: theme.shape.borderRadius,
-    overflowX: 'auto',
-    fontSize: '0.75rem',
-    fontFamily: 'monospace',
-    whiteSpace: 'pre-wrap',
-    wordBreak: 'break-word',
-  },
-  devBadge: {
-    display: 'inline-block',
-    marginBottom: theme.spacing(2),
-    padding: '2px 8px',
-    backgroundColor: theme.palette.warning.main,
-    color: theme.palette.warning.contrastText,
-    borderRadius: theme.shape.borderRadius,
-    fontSize: '0.7rem',
-    fontWeight: 700,
-    letterSpacing: '0.05em',
-    textTransform: 'uppercase',
-  },
-}));
+const errorPanelClass =
+  'max-w-[560px] w-full rounded-md border border-(--borderColor-default) border-l-4 border-l-(--borderColor-danger-emphasis) bg-(--bgColor-default) p-6 shadow-sm';
 
 const ProdFallback = ({ reset }: { reset: () => void }) => {
-  const classes = useStyles();
   return (
-    <div className={classes.wrapper}>
-      <Paper className={classes.root} role='alert' elevation={0} variant='outlined'>
-        <Typography variant='h6' className={classes.title}>
+    <div className='flex min-h-[60vh] items-center justify-center p-4'>
+      <div className={errorPanelClass} role='alert'>
+        <Text as='h2' className='m-0 mb-2 text-base font-semibold text-(--fgColor-danger)'>
           Something went wrong
-        </Typography>
-        <Typography variant='body2' className={classes.message}>
+        </Text>
+        <Text as='p' className='m-0 mb-4 text-sm text-(--fgColor-muted)'>
           An unexpected error occurred. Please try again — if the problem persists, contact your
           administrator.
-        </Typography>
-        <div className={classes.actions}>
-          <Button variant='outlined' size='small' color='primary' onClick={reset}>
+        </Text>
+        <Stack direction='horizontal' gap='condensed' padding='none' align='center' wrap='wrap'>
+          <Button variant='primary' size='small' onClick={reset}>
             Retry
           </Button>
-          <Button size='small' onClick={() => window.location.reload()}>
+          <Button variant='default' size='small' onClick={() => window.location.reload()}>
             Reload page
           </Button>
-        </div>
-      </Paper>
+        </Stack>
+      </div>
     </div>
   );
 };
@@ -116,36 +55,37 @@ const DevFallback = ({
   name?: string;
   reset: () => void;
 }) => {
-  const classes = useStyles();
   const [showDetails, setShowDetails] = useState(false);
   const context = name ? ` in ${name}` : '';
 
   return (
-    <div className={classes.wrapper}>
-      <Paper className={classes.root} role='alert' elevation={0} variant='outlined'>
-        <div className={classes.devBadge}>dev</div>
-        <Typography variant='h6' className={classes.title}>
+    <div className='flex min-h-[60vh] items-center justify-center p-4'>
+      <div className={errorPanelClass} role='alert'>
+        <Label variant='attention' size='small' className='mb-3'>
+          dev
+        </Label>
+        <Text as='h2' className='m-0 mb-2 text-base font-semibold text-(--fgColor-danger)'>
           Something went wrong{context}
-        </Typography>
-        <Typography variant='body2' className={classes.message}>
+        </Text>
+        <Text as='p' className='m-0 mb-4 text-sm whitespace-pre-wrap text-(--fgColor-default)'>
           {error.message}
-        </Typography>
-        <div className={classes.actions}>
-          <Button variant='outlined' size='small' color='primary' onClick={reset}>
+        </Text>
+        <Stack direction='horizontal' gap='condensed' padding='none' align='center' wrap='wrap'>
+          <Button variant='primary' size='small' onClick={reset}>
             Retry
           </Button>
           {error.stack && (
-            <Button size='small' onClick={() => setShowDetails((v) => !v)}>
+            <Button variant='default' size='small' onClick={() => setShowDetails((v) => !v)}>
               {showDetails ? 'Hide stack trace' : 'Show stack trace'}
             </Button>
           )}
-        </div>
-        {error.stack && (
-          <Collapse in={showDetails}>
-            <pre className={classes.stack}>{error.stack}</pre>
-          </Collapse>
+        </Stack>
+        {error.stack && showDetails && (
+          <pre className='mt-4 max-h-[50vh] overflow-auto whitespace-pre-wrap break-words rounded-md border border-(--borderColor-default) bg-(--bgColor-muted) p-4 font-mono text-xs text-(--fgColor-default)'>
+            {error.stack}
+          </pre>
         )}
-      </Paper>
+      </div>
     </div>
   );
 };

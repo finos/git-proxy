@@ -16,11 +16,21 @@
 
 import _ from 'lodash';
 import Datastore from '@seald-io/nedb';
+import { activityPrimaryStatusFromFlags } from '../../activity/activityPrimaryStatus';
+import { canonicalRemoteUrl } from '../../activity/canonicalRemoteUrl';
 import { Action } from '../../proxy/actions/Action';
 import { toClass } from '../helper';
-import { PushQuery } from '../types';
+import { pushListProjection } from '../pushProjection';
+import { compactPush, restorePush } from '../pushStorage';
+import {
+  PushQuery,
+  RepoActivityTabCounts,
+  RepoPushRollupsByCanonicalUrl,
+  emptyRepoActivityTabCounts,
+} from '../types';
 import { CompletedAttestation, Rejection } from '../../proxy/processors/types';
 import { handleErrorAndLog } from '../../utils/errors';
+import { buildUserProfilePushFilter } from '../userProfilePushQuery';
 
 const COMPACTION_INTERVAL = 1000 * 60 * 60 * 24; // once per day
 
@@ -41,6 +51,99 @@ try {
 }
 db.setAutocompactionInterval(COMPACTION_INTERVAL);
 
+function bumpCount(
+  m: Map<string, RepoActivityTabCounts>,
+  canonicalKey: string,
+  tab: keyof RepoActivityTabCounts,
+): void {
+  if (!canonicalKey) {
+    return;
+  }
+  let row = m.get(canonicalKey);
+  if (!row) {
+    row = emptyRepoActivityTabCounts();
+    m.set(canonicalKey, row);
+  }
+  row[tab] += 1;
+}
+
+function bumpMaxTimestampMs(
+  m: Map<string, number>,
+  canonicalKey: string,
+  timestamp: unknown,
+): void {
+  if (!canonicalKey) {
+    return;
+  }
+  const ts = typeof timestamp === 'number' ? timestamp : NaN;
+  if (!Number.isFinite(ts)) {
+    return;
+  }
+  const prev = m.get(canonicalKey);
+  if (prev === undefined || ts > prev) {
+    m.set(canonicalKey, ts);
+  }
+}
+
+type PushActivityProjection = {
+  url?: string;
+  error?: boolean;
+  rejected?: boolean;
+  canceled?: boolean;
+  authorised?: boolean;
+  blocked?: boolean;
+  allowPush?: boolean;
+  timestamp?: number;
+};
+
+export const getRepoPushRollupsByCanonicalUrl = (): Promise<RepoPushRollupsByCanonicalUrl> => {
+  return new Promise((resolve, reject) => {
+    db.find(
+      { type: 'push' },
+      {
+        url: 1,
+        error: 1,
+        rejected: 1,
+        canceled: 1,
+        authorised: 1,
+        blocked: 1,
+        allowPush: 1,
+        timestamp: 1,
+      },
+      (err, docs: PushActivityProjection[]) => {
+        if (err) {
+          reject(err);
+          return;
+        }
+        const tabCounts = new Map<string, RepoActivityTabCounts>();
+        const latestPendingReviewAtMs = new Map<string, number>();
+        const latestPushAtMs = new Map<string, number>();
+        for (const doc of docs) {
+          const url = typeof doc.url === 'string' ? doc.url : '';
+          const key = canonicalRemoteUrl(url);
+          if (!key) {
+            continue;
+          }
+          const tab = activityPrimaryStatusFromFlags({
+            error: doc.error === true,
+            rejected: doc.rejected === true,
+            canceled: doc.canceled === true,
+            authorised: doc.authorised === true,
+            blocked: doc.blocked === true,
+            allowPush: doc.allowPush === true,
+          });
+          bumpCount(tabCounts, key, tab);
+          bumpMaxTimestampMs(latestPushAtMs, key, doc.timestamp);
+          if (tab === 'pending') {
+            bumpMaxTimestampMs(latestPendingReviewAtMs, key, doc.timestamp);
+          }
+        }
+        resolve({ tabCounts, latestPendingReviewAtMs, latestPushAtMs });
+      },
+    );
+  });
+};
+
 const defaultPushQuery: Partial<PushQuery> = {
   error: false,
   blocked: true,
@@ -53,9 +156,34 @@ export const getPushes = (query: Partial<PushQuery>): Promise<Action[]> => {
   if (!query) query = defaultPushQuery;
   return new Promise((resolve, reject) => {
     db.find(query)
+      .projection(pushListProjection)
       .sort({ timestamp: -1 })
       .exec((err, docs) => {
         // ignore for code coverage as neDB rarely returns errors even for an invalid query
+        /* istanbul ignore if */
+        if (err) {
+          reject(err);
+        } else {
+          resolve(
+            _.chain(docs)
+              .map((x) => toClass(x, Action.prototype))
+              .value(),
+          );
+        }
+      });
+  });
+};
+
+export const getPushesForUserProfile = (
+  emailVariants: string[],
+  profileUsername: string,
+): Promise<Action[]> => {
+  const filter = buildUserProfilePushFilter(emailVariants, profileUsername);
+  return new Promise((resolve, reject) => {
+    db.find(filter)
+      .projection(pushListProjection)
+      .sort({ timestamp: -1 })
+      .exec((err, docs) => {
         /* istanbul ignore if */
         if (err) {
           reject(err);
@@ -81,7 +209,7 @@ export const getPush = async (id: string): Promise<Action | null> => {
         if (!doc) {
           resolve(null);
         } else {
-          resolve(toClass(doc, Action.prototype));
+          resolve(restorePush(doc));
         }
       }
     });
@@ -105,7 +233,7 @@ export const deletePush = async (id: string): Promise<void> => {
 export const writeAudit = async (action: Action): Promise<void> => {
   return new Promise((resolve, reject) => {
     const options = { multi: false, upsert: true };
-    db.update({ id: action.id }, action, options, (err) => {
+    db.update({ id: action.id }, compactPush(action), options, (err) => {
       // ignore for code coverage as neDB rarely returns errors even for an invalid query
       /* istanbul ignore if */
       if (err) {

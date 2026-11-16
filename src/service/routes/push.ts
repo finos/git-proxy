@@ -17,6 +17,7 @@
 import express, { Request, Response } from 'express';
 import * as db from '../../db';
 import { PushQuery } from '../../db/types';
+import { Action } from '../../proxy/actions';
 import { AttestationConfig } from '../../config/generated/config';
 import { getAttestationConfig } from '../../config';
 import { AttestationAnswer, Rejection } from '../../proxy/processors/types';
@@ -83,18 +84,7 @@ router.post('/:id/reject', async (req: Request<{ id: string }>, res: Response) =
   const push = await getValidPushOrRespond(id, res);
   if (!push) return;
 
-  // Get the committer of the push via their email
-  const committerEmail = push.userEmail;
-  const list = await db.getUsers({ email: committerEmail });
-
-  if (list.length === 0) {
-    res.status(404).send({
-      message: `No user found with the committer's email address: ${committerEmail}`,
-    });
-    return;
-  }
-
-  if (list[0].username.toLowerCase() === username.toLowerCase() && !list[0].admin) {
+  if (await isOwnPush(push, username)) {
     res.status(403).send({
       message: `Cannot reject your own changes`,
     });
@@ -160,34 +150,29 @@ router.post(
 
     const { username } = req.user as { username: string };
 
-    const push = await db.getPush(id);
-    if (!push) {
-      res.status(404).send({
-        message: 'Push request not found',
+    const push = await getValidPushOrRespond(id, res);
+    if (!push) return;
+
+    // A record written before pusher identity was verified carries whatever the
+    // pushed objects said. The four-eyes check cannot be applied to it, so it
+    // cannot be approved; a fresh push creates a verified record in its place.
+    if (!push.pusherVerified) {
+      res.status(409).send({
+        message:
+          'This push was recorded without a verified pusher identity and cannot be approved. ' +
+          'Ask the pusher to push again.',
       });
       return;
     }
 
-    // Get the committer of the push via their email address
-    const committerEmail = push.userEmail;
-
-    const list = await db.getUsers({ email: committerEmail });
-
-    if (list.length === 0) {
-      res.status(404).send({
-        message: `No user found with the committer's email address: ${committerEmail}`,
-      });
-      return;
-    }
-
-    if (list[0].username.toLowerCase() === username.toLowerCase() && !list[0].admin) {
+    if (await isOwnPush(push, username)) {
       res.status(403).send({
         message: `Cannot approve your own changes`,
       });
       return;
     }
 
-    // If we are not the author, now check that we are allowed to authorise on this
+    // If we are not the pusher, now check that we are allowed to authorise on this
     // repo
     const isAllowed = await db.canUserApproveRejectPush(id, username);
     if (isAllowed) {
@@ -255,12 +240,26 @@ async function getValidPushOrRespond(id: string, res: Response) {
     return null;
   }
 
-  if (!push.userEmail) {
-    res.status(400).send({ message: `Push request has no user email` });
+  if (!push.user) {
+    res.status(400).send({ message: `Push request has no pusher recorded` });
     return null;
   }
 
   return push;
+}
+
+/**
+ * The pusher recorded on the action is the git-proxy user the push credential
+ * resolved to, so the four-eyes check is a comparison of usernames. Admins are
+ * exempt, as before.
+ * @param {Action} push the held push
+ * @param {string} reviewer username of the reviewer
+ * @return {Promise<boolean>} true when the reviewer pushed it and is not an admin
+ */
+async function isOwnPush(push: Action, reviewer: string): Promise<boolean> {
+  if (!push.user || push.user.toLowerCase() !== reviewer.toLowerCase()) return false;
+  const user = await db.findUser(reviewer);
+  return !user?.admin;
 }
 
 function validateAttestation(answers: AttestationAnswer[], config: AttestationConfig): boolean {

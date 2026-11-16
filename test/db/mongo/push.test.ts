@@ -16,6 +16,7 @@
 
 import { describe, it, expect, afterEach, vi, beforeEach } from 'vitest';
 import { Action } from '../../../src/proxy/actions';
+import { pushListProjection } from '../../../src/db/pushProjection';
 
 const mockFindOne = vi.fn();
 const mockDeleteOne = vi.fn();
@@ -45,8 +46,16 @@ vi.mock('../../../src/db/helper', () => ({
 }));
 
 describe('MongoDB Push Handler', async () => {
-  const { getPushes, getPush, deletePush, writeAudit, authorise, reject, cancel } =
-    await import('../../../src/db/mongo/pushes');
+  const {
+    getPushes,
+    getPushesForUserProfile,
+    getPush,
+    deletePush,
+    writeAudit,
+    authorise,
+    reject,
+    cancel,
+  } = await import('../../../src/db/mongo/pushes');
 
   const TEST_PUSH = {
     id: 'test-push-123',
@@ -95,31 +104,7 @@ describe('MongoDB Push Handler', async () => {
           type: 'push',
         },
         {
-          projection: {
-            _id: 0,
-            id: 1,
-            allowPush: 1,
-            authorised: 1,
-            blocked: 1,
-            blockedMessage: 1,
-            branch: 1,
-            canceled: 1,
-            commitData: 1,
-            commitFrom: 1,
-            commitTo: 1,
-            error: 1,
-            method: 1,
-            project: 1,
-            rejected: 1,
-            repo: 1,
-            repoName: 1,
-            tag: 1,
-            tagData: 1,
-            timestamp: 1,
-            type: 1,
-            url: 1,
-            user: 1,
-          },
+          projection: pushListProjection,
           sort: {
             timestamp: -1,
           },
@@ -143,6 +128,37 @@ describe('MongoDB Push Handler', async () => {
         }),
       );
       expect(result).toEqual(mockPushes);
+    });
+  });
+
+  describe('getPushesForUserProfile', () => {
+    it('should get pushes for user profile with $or filter', async () => {
+      mockFindDocuments.mockResolvedValue([TEST_PUSH]);
+
+      const result = await getPushesForUserProfile(['a@example.com'], 'bob');
+
+      expect(mockFindDocuments).toHaveBeenCalledWith(
+        'pushes',
+        expect.objectContaining({
+          type: 'push',
+          $or: expect.arrayContaining([
+            { userEmail: { $in: ['a@example.com'] } },
+            {
+              'attestation.reviewer.username': expect.any(RegExp),
+            },
+          ]),
+        }),
+        expect.objectContaining({
+          sort: { timestamp: -1 },
+        }),
+      );
+      const filter = mockFindDocuments.mock.calls[0][1] as {
+        $or: Array<Record<string, unknown>>;
+      };
+      const reviewer = filter.$or[1]['attestation.reviewer.username'] as RegExp;
+      expect(reviewer.test('Bob')).toBe(true);
+      expect(reviewer.test('alice')).toBe(false);
+      expect(result).toEqual([TEST_PUSH]);
     });
   });
 
@@ -195,6 +211,7 @@ describe('MongoDB Push Handler', async () => {
             allowPush: TEST_PUSH.allowPush,
             authorised: TEST_PUSH.authorised,
           }),
+          $unset: { _lastStepIndex: '' },
         },
         { upsert: true },
       );
@@ -230,6 +247,7 @@ describe('MongoDB Push Handler', async () => {
             rejected: false,
             attestation: attestation,
           }),
+          $unset: { _lastStepIndex: '' },
         },
         { upsert: true },
       );
@@ -265,6 +283,7 @@ describe('MongoDB Push Handler', async () => {
             rejected: true,
             rejection: rejection,
           }),
+          $unset: { _lastStepIndex: '' },
         },
         { upsert: true },
       );
@@ -298,6 +317,7 @@ describe('MongoDB Push Handler', async () => {
             canceled: true,
             rejected: false,
           }),
+          $unset: { _lastStepIndex: '' },
         },
         { upsert: true },
       );

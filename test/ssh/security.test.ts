@@ -24,30 +24,19 @@ import { SSHServer } from '../../src/proxy/ssh/server';
 import { ClientWithUser } from '../../src/proxy/ssh/types';
 import * as fs from 'fs';
 import * as config from '../../src/config';
-import { execSync } from 'child_process';
+import { generateKeyPairSync } from 'crypto';
 
 describe('SSH Security Tests', () => {
-  const testKeysDir = 'test/keys';
+  const testKeysDir = fs.mkdtempSync('test/ssh-security-keys-');
 
   beforeAll(() => {
-    // Create directory for test keys if needed
-    if (!fs.existsSync(testKeysDir)) {
-      fs.mkdirSync(testKeysDir, { recursive: true });
-    }
-
-    // Generate test SSH key in PEM format if it doesn't exist
-    if (!fs.existsSync(`${testKeysDir}/test_key`)) {
-      try {
-        execSync(
-          `ssh-keygen -t rsa -b 2048 -m PEM -f ${testKeysDir}/test_key -N "" -C "test@git-proxy"`,
-          { timeout: 5000, stdio: 'pipe' },
-        );
-        console.log('[Test Setup] Generated test SSH key in PEM format');
-      } catch (error) {
-        console.error('[Test Setup] Failed to generate test key:', error);
-        throw error; // Fail setup if we can't generate keys
-      }
-    }
+    const { privateKey, publicKey } = generateKeyPairSync('rsa', {
+      modulusLength: 2048,
+      privateKeyEncoding: { type: 'pkcs1', format: 'pem' },
+      publicKeyEncoding: { type: 'spki', format: 'pem' },
+    });
+    fs.writeFileSync(`${testKeysDir}/test_key`, privateKey);
+    fs.writeFileSync(`${testKeysDir}/test_key.pub`, publicKey);
 
     // Mock SSH config to use test keys
     vi.spyOn(config, 'getSSHConfig').mockReturnValue({
@@ -63,9 +52,7 @@ describe('SSH Security Tests', () => {
   afterAll(() => {
     vi.restoreAllMocks();
     // Clean up test keys
-    if (fs.existsSync(testKeysDir)) {
-      fs.rmSync(testKeysDir, { recursive: true, force: true });
-    }
+    fs.rmSync(testKeysDir, { recursive: true, force: true });
   });
   describe('Repository Path Validation', () => {
     let server: SSHServer;

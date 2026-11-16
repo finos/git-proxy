@@ -15,11 +15,7 @@
  */
 
 import React from 'react';
-import { withStyles } from '@material-ui/core/styles';
-import { green } from '@material-ui/core/colors';
-import { Help } from '@material-ui/icons';
-import { Grid, Tooltip, Checkbox, FormGroup, FormControlLabel } from '@material-ui/core';
-import { Theme } from '@material-ui/core/styles';
+import { Checkbox, Stack, Text } from '@primer/react';
 import { QuestionFormData } from '../../../types';
 
 interface AttestationFormProps {
@@ -27,38 +23,9 @@ interface AttestationFormProps {
   passFormData: (data: QuestionFormData[]) => void;
 }
 
-const styles = (theme: Theme) => ({
-  tooltip: {
-    backgroundColor: '#f5f5f9',
-    color: 'rgba(0, 0, 0, 0.87)',
-    maxWidth: 220,
-    fontSize: theme.typography.pxToRem(12),
-    border: '1px solid #dadde9',
-  },
-});
-
-interface GreenCheckboxProps {
-  checked: boolean;
-  onChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
-  name: string;
-}
-
-const GreenCheckbox = withStyles({
-  root: {
-    color: green[500],
-    '&$checked': {
-      color: green[700],
-    },
-    paddingRight: '35px',
-  },
-  checked: {},
-})((props: GreenCheckboxProps) => <Checkbox color='default' {...props} />);
-
-const HTMLTooltip = withStyles(styles)(Tooltip);
-
-const AttestationForm: React.FC<AttestationFormProps> = ({ formData, passFormData }) => {
+const AttestationForm = ({ formData, passFormData }: AttestationFormProps) => {
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const name = parseInt(event.target.name);
+    const name = parseInt(event.target.name, 10);
     const checked = event.target.checked;
     const clone = [...formData];
     clone[name] = { ...clone[name], checked };
@@ -66,54 +33,50 @@ const AttestationForm: React.FC<AttestationFormProps> = ({ formData, passFormDat
   };
 
   return (
-    <FormGroup style={{ margin: '0px 15px 0px 35px', rowGap: '20px', padding: '20px' }} row={false}>
+    <Stack direction='vertical' gap='normal' padding='none'>
       {formData.map((question, index) => {
+        const inputId = `attestation-check-${index}`;
+        const hasLinks = Boolean(question.tooltip.links?.length);
+
         return (
-          <Grid key={index} container spacing={2} direction='row' alignItems='center'>
-            <Grid item xs={11}>
-              <FormControlLabel
-                control={
-                  <GreenCheckbox
-                    checked={question.checked}
-                    onChange={handleChange}
-                    name={index.toString()}
-                  />
-                }
-                label={question.label}
-              />
-            </Grid>
-            <Grid item xs={1}>
-              <HTMLTooltip
-                interactive
-                placement='left'
-                title={
-                  <React.Fragment>
-                    {question.tooltip.text}
-                    {question.tooltip.links && (
-                      <div>
-                        <ul style={{ padding: 0, listStyleType: 'none' }}>
-                          {question.tooltip.links.map((link, linkIndex) => {
-                            return (
-                              <li key={linkIndex}>
-                                <a target='_blank' href={link.url} rel='noreferrer'>
-                                  {link.text}
-                                </a>
-                              </li>
-                            );
-                          })}
-                        </ul>
-                      </div>
-                    )}
-                  </React.Fragment>
-                }
+          <div key={index} className='flex min-w-0 items-start gap-3'>
+            <Checkbox
+              id={inputId}
+              checked={question.checked}
+              onChange={handleChange}
+              name={index.toString()}
+              className='!m-0 shrink-0 self-start'
+            />
+            <div className='min-w-0 flex-1'>
+              <label
+                htmlFor={inputId}
+                className='!m-0 block cursor-pointer select-none !text-base !font-normal !leading-4 !text-[var(--fgColor-default)]'
               >
-                <Help style={{ cursor: 'help' }} fontSize='small' htmlColor='#87a2bd' />
-              </HTMLTooltip>
-            </Grid>
-          </Grid>
+                {question.label}
+              </label>
+              {hasLinks ? (
+                <ul className='m-0 mt-1.5 list-none space-y-1 pl-0'>
+                  {question.tooltip.links!.map((link, linkIndex) => (
+                    <li key={linkIndex}>
+                      <Text as='span' className='!text-base !text-[var(--fgColor-default)]'>
+                        <a
+                          href={link.url}
+                          target='_blank'
+                          rel='noreferrer'
+                          className='text-[var(--fgColor-accent)] underline hover:no-underline'
+                        >
+                          {link.text}
+                        </a>
+                      </Text>
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
+            </div>
+          </div>
         );
       })}
-    </FormGroup>
+    </Stack>
   );
 };
 

@@ -139,3 +139,91 @@ describe('checkHiddenCommits.exec', () => {
     );
   });
 });
+
+describe('checkHiddenCommits.exec - parent (commitFrom) exemption', () => {
+  let action: Action;
+  let req: Request;
+
+  // 40-char hex object IDs so values look like real SHAs
+  const PARENT = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'; // already on remote (commitFrom)
+  const NEW_1 = 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
+  const NEW_2 = 'cccccccccccccccccccccccccccccccccccccccc';
+  const HIDDEN = 'dddddddddddddddddddddddddddddddddddddddd'; // not reachable from commitTo
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+
+    action = new Action('some-id', 'push', 'POST', Date.now(), 'repo.git');
+    action.proxyGitPath = '/fake';
+    action.commitFrom = PARENT;
+    action.commitTo = NEW_1;
+    action.newIdxFiles = ['pack-test.idx'];
+    req = { body: '' } as Request;
+
+    mockReaddirSync.mockReturnValue(['pack-test.idx']);
+  });
+
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('does not flag the parent when it appears in the pushed pack (push onto existing history)', async () => {
+    // rev-list PARENT..NEW_1 → only the new commit (parent excluded by the range)
+    // verify-pack → pack carries the new commit AND the already-on-remote parent
+    mockSpawnSync
+      .mockReturnValueOnce({ stdout: `${NEW_1}\n` })
+      .mockReturnValueOnce({ stdout: `${NEW_1} commit 100 1\n${PARENT} commit 100 2\n` });
+
+    await checkHidden(req, action);
+
+    const step = action.steps.find((s) => s.stepName === 'checkHiddenCommits');
+    // parent is exempted → introduced set is {NEW_1, PARENT}
+    expect(step?.logs).toContain('checkHiddenCommits - Total introduced commits: 2');
+    expect(step?.logs).toContain('checkHiddenCommits - Total commits in the pack: 2');
+    expect(step?.logs).toContain(
+      'checkHiddenCommits - All pack commits are referenced in the introduced range.',
+    );
+    expect(action.error).toBe(false);
+  });
+
+  it('does not flag the parent on a multi-commit push', async () => {
+    action.commitTo = NEW_2;
+
+    // rev-list PARENT..NEW_2 → the two new commits
+    // verify-pack → the two new commits plus the already-on-remote parent
+    mockSpawnSync.mockReturnValueOnce({ stdout: `${NEW_2}\n${NEW_1}\n` }).mockReturnValueOnce({
+      stdout: `${NEW_2} commit 100 1\n${NEW_1} commit 100 2\n${PARENT} commit 100 3\n`,
+    });
+
+    await checkHidden(req, action);
+
+    const step = action.steps.find((s) => s.stepName === 'checkHiddenCommits');
+    // {NEW_1, NEW_2} introduced + PARENT exempted = 3
+    expect(step?.logs).toContain('checkHiddenCommits - Total introduced commits: 3');
+    expect(step?.logs).toContain(
+      'checkHiddenCommits - All pack commits are referenced in the introduced range.',
+    );
+    expect(action.error).toBe(false);
+  });
+
+  it('still blocks a genuinely hidden commit that is not the parent (security)', async () => {
+    // rev-list PARENT..NEW_1 → only the new commit
+    // verify-pack → new commit, the (exempt) parent, and a hidden commit on an unapproved base
+    mockSpawnSync.mockReturnValueOnce({ stdout: `${NEW_1}\n` }).mockReturnValueOnce({
+      stdout: `${NEW_1} commit 100 1\n${PARENT} commit 100 2\n${HIDDEN} commit 100 3\n`,
+    });
+
+    await checkHidden(req, action);
+
+    const step = action.steps.find((s) => s.stepName === 'checkHiddenCommits');
+    // only HIDDEN is unreferenced; PARENT is exempted, NEW_1 is in range
+    expect(step?.logs).toContain('checkHiddenCommits - Referenced commits: 2');
+    expect(step?.logs).toContain('checkHiddenCommits - Unreferenced commits: 1');
+    expect(step?.logs).toContain(
+      `checkHiddenCommits - Unreferenced commits in pack (1): ${HIDDEN}.\n` +
+        `This usually happens when a branch was made from a commit that hasn't been approved and pushed to the remote.\n` +
+        `Please rebase the branch and push again.`,
+    );
+    expect(action.error).toBe(true);
+  });
+});

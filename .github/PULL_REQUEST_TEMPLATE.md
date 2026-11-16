@@ -53,7 +53,7 @@ Resolves #
   Tests are required for new functionality (80%+ patch coverage enforced by CodeCov).
   Add tests in the appropriate location:
   - test/          — Unit and integration tests (Vitest). Organised by module (processors/, db/, services/, plugin/, etc.)
-  - tests/e2e/     — End-to-end tests (Vitest + Docker). Real git operations against a containerised environment.
+  - test/e2e/     — End-to-end tests (Vitest + Docker). Real git operations against a containerised environment.
   - cypress/e2e/   — UI tests (Cypress). Dashboard UI end-to-end tests.
 -->
 

@@ -49,19 +49,22 @@ function getApiBaseUrl() {
   return Cypress.env('API_BASE_URL') || Cypress.config('baseUrl');
 }
 
-// start of a login command with sessions
-// TODO: resolve issues with the CSRF token
+/**
+ * Logs in through the API and caches the session. The login form itself is covered by
+ * login.cy.js; going through the API here keeps every other spec independent of form timing.
+ */
 Cypress.Commands.add('login', (username, password) => {
   cy.session([username, password], () => {
-    cy.visit('/login');
-    cy.intercept('GET', '**/api/auth/profile').as('getUser');
-
-    cy.get('[data-test=username]').type(username);
-    cy.get('[data-test=password]').type(password);
-    cy.get('[data-test=login]').click();
-
-    cy.wait('@getUser');
-    cy.url().should('include', '/dashboard/repo');
+    cy.getCSRFToken().then((csrfToken) => {
+      cy.request({
+        method: 'POST',
+        url: `${getApiBaseUrl()}/api/auth/login`,
+        body: { username, password },
+        headers: { 'X-CSRF-TOKEN': csrfToken },
+      })
+        .its('status')
+        .should('eq', 200);
+    });
   });
 });
 
@@ -142,9 +145,7 @@ Cypress.Commands.add('createTestTagPush', (pushData = {}) => {
         authorEmail: 'test-author@test.com',
       },
     ],
-    diff: {
-      content: '+++ test tag push implementation',
-    },
+    diff: '+++ test tag push implementation',
     ...pushData,
   };
 
@@ -157,30 +158,55 @@ Cypress.Commands.add('createTestTagPush', (pushData = {}) => {
   return cy.wrap(defaultTagPush);
 });
 
-Cypress.Commands.add('createUser', (username, password, email, gitAccount) => {
-  cy.request({
-    method: 'POST',
-    url: `${getApiBaseUrl()}/api/auth/create-user`,
-    body: { username, password, email, gitAccount, admin: false },
-    failOnStatusCode: false,
+Cypress.Commands.add('registerTestRepo', (url) => {
+  cy.intercept('GET', '**/api/v1/repo*', {
+    statusCode: 200,
+    body: [
+      {
+        _id: 'cypress-test-repo-id',
+        project: 'cypress-test',
+        name: 'test-repo',
+        url,
+        proxyURL: '',
+        users: { canPush: [], canAuthorise: [] },
+      },
+    ],
+  }).as('getRepos');
+});
+
+Cypress.Commands.add('createUser', (username, password, email, scmIdentities = {}) => {
+  cy.getCSRFToken().then((csrfToken) => {
+    cy.request({
+      method: 'POST',
+      url: `${getApiBaseUrl()}/api/auth/create-user`,
+      body: { username, password, email, admin: false, scmIdentities },
+      headers: { 'X-CSRF-TOKEN': csrfToken },
+      failOnStatusCode: false,
+    });
   });
 });
 
 Cypress.Commands.add('addUserPushPermission', (repoId, username) => {
-  cy.request({
-    method: 'PATCH',
-    url: `${getApiBaseUrl()}/api/v1/repo/${repoId}/user/push`,
-    body: { username },
-    failOnStatusCode: false,
+  cy.getCSRFToken().then((csrfToken) => {
+    cy.request({
+      method: 'PATCH',
+      url: `${getApiBaseUrl()}/api/v1/repo/${repoId}/user/push`,
+      body: { username },
+      headers: { 'X-CSRF-TOKEN': csrfToken },
+      failOnStatusCode: false,
+    });
   });
 });
 
 Cypress.Commands.add('addUserAuthorisePermission', (repoId, username) => {
-  cy.request({
-    method: 'PATCH',
-    url: `${getApiBaseUrl()}/api/v1/repo/${repoId}/user/authorise`,
-    body: { username },
-    failOnStatusCode: false,
+  cy.getCSRFToken().then((csrfToken) => {
+    cy.request({
+      method: 'PATCH',
+      url: `${getApiBaseUrl()}/api/v1/repo/${repoId}/user/authorise`,
+      body: { username },
+      headers: { 'X-CSRF-TOKEN': csrfToken },
+      failOnStatusCode: false,
+    });
   });
 });
 
@@ -236,6 +262,42 @@ Cypress.Commands.add('cleanupTestRepos', () => {
   });
 });
 
+/**
+ * Registers a repository through the API and yields the created record.
+ */
+Cypress.Commands.add('createTestRepo', (project, name, url) => {
+  return cy.getCSRFToken().then((csrfToken) =>
+    cy
+      .request({
+        method: 'POST',
+        url: `${getApiBaseUrl()}/api/v1/repo`,
+        body: { project, name, url },
+        headers: { 'X-CSRF-TOKEN': csrfToken },
+      })
+      .its('body'),
+  );
+});
+
+/**
+ * Stubs the per-repository SCM metadata lookup so list and detail pages do not depend on the
+ * upstream host being reachable for the made-up repositories the specs register.
+ */
+Cypress.Commands.add('stubScmMetadata', () => {
+  cy.intercept('GET', '**/api/v1/repo/*/scm-metadata', { statusCode: 200, body: null });
+});
+
+/**
+ * Enters a whole value into a search box in one input event, the way a paste does. The list pages
+ * keep the search text in the URL, and Cypress types fast enough that keystrokes can land before the
+ * previous URL update has rendered.
+ */
+Cypress.Commands.add('pasteInto', { prevSubject: 'element' }, ($input, value) => {
+  const setValue = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set;
+  setValue.call($input[0], value);
+  $input[0].dispatchEvent(new Event('input', { bubbles: true }));
+  return cy.wrap($input).should('have.value', value);
+});
+
 Cypress.Commands.add('deleteRepo', (repoId) => {
   cy.getCSRFToken().then((csrfToken) => {
     cy.request({
@@ -246,6 +308,57 @@ Cypress.Commands.add('deleteRepo', (repoId) => {
       },
       failOnStatusCode: false,
     });
+  });
+});
+
+/**
+ * The cleanup helpers below call test-only endpoints that the API mounts when NODE_ENV=test (as in
+ * the Docker Compose stack). Elsewhere the endpoints do not exist and the calls are no-ops, so
+ * specs that use them must also tolerate data left over from earlier runs.
+ */
+Cypress.Commands.add('deleteTestPush', (pushId) => {
+  cy.getCSRFToken().then((csrfToken) => {
+    cy.request({
+      method: 'DELETE',
+      url: `${getApiBaseUrl()}/api/v1/test/push/${pushId}`,
+      headers: { 'X-CSRF-TOKEN': csrfToken },
+      failOnStatusCode: false,
+    });
+  });
+});
+
+Cypress.Commands.add('deleteTestUser', (username) => {
+  cy.getCSRFToken().then((csrfToken) => {
+    cy.request({
+      method: 'DELETE',
+      url: `${getApiBaseUrl()}/api/v1/test/user/${username}`,
+      headers: { 'X-CSRF-TOKEN': csrfToken },
+      failOnStatusCode: false,
+    });
+  });
+});
+
+/**
+ * Mints a Forgejo access token for a seeded user from their password. The proxy identifies a
+ * pusher by asking the upstream's API who the token belongs to, and that API does not accept a
+ * password in the token's place, so pushes must present a token. Forgejo allows creating one
+ * with plain basic auth. Token names must be unique per user, so each call mints its own.
+ */
+Cypress.Commands.add('mintUpstreamToken', (username, password) => {
+  const gitServerUrl = Cypress.env('GIT_SERVER_URL') || 'https://localhost:8443';
+  const name = `cypress-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  const body = JSON.stringify({ name, scopes: ['write:repository', 'read:user'] });
+  // curl rather than cy.request: the test server's certificate is self-signed.
+  cy.exec(
+    `curl -sk -u '${username}:${password}' -H 'Content-Type: application/json' ` +
+      `-d '${body}' ${gitServerUrl}/api/v1/users/${username}/tokens`,
+    { timeout: 15000 },
+  ).then((result) => {
+    const token = JSON.parse(result.stdout).sha1;
+    if (!token) {
+      throw new Error(`Could not mint a token for ${username}: ${result.stdout}`);
+    }
+    return cy.wrap(token, { log: false });
   });
 });
 

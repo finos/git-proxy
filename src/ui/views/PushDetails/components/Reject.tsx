@@ -14,107 +14,155 @@
  * limitations under the License.
  */
 
-import React, { useState } from 'react';
-import Dialog from '@material-ui/core/Dialog';
-import DialogContent from '@material-ui/core/DialogContent';
-import DialogActions from '@material-ui/core/DialogActions';
-import TextField from '@material-ui/core/TextField';
-import { Block, ErrorOutline } from '@material-ui/icons';
-import Button from '../../../components/CustomButtons/Button';
+import React, { useCallback, useEffect, useState } from 'react';
+import {
+  Banner,
+  Button,
+  Dialog,
+  FormControl,
+  IconButton,
+  Stack,
+  Text,
+  Textarea,
+} from '@primer/react';
+import type { DialogHeaderProps } from '@primer/react';
+import { XIcon } from '@primer/octicons-react';
 
 interface RejectProps {
   rejectFn: (reason: string) => void;
+  disabled?: boolean;
 }
 
-const Reject: React.FC<RejectProps> = ({ rejectFn }) => {
+const REJECT_REASON_ID = 'push-reject-reason';
+
+const RejectDialogHeader = ({
+  dialogLabelId,
+  title,
+  subtitle,
+  dialogDescriptionId,
+  onClose,
+}: DialogHeaderProps) => (
+  <Dialog.Header>
+    <div className='flex'>
+      <div className='flex min-w-0 flex-1 flex-col px-2 py-1.5'>
+        <Dialog.Title
+          id={dialogLabelId}
+          className='!text-base !leading-snug !text-[var(--fgColor-default)]'
+        >
+          {title ?? 'Dialog'}
+        </Dialog.Title>
+        {subtitle ? <Dialog.Subtitle id={dialogDescriptionId}>{subtitle}</Dialog.Subtitle> : null}
+      </div>
+      <IconButton
+        icon={XIcon}
+        aria-label='Close'
+        variant='invisible'
+        onClick={() => onClose('close-button')}
+        unsafeDisableTooltip
+      />
+    </div>
+  </Dialog.Header>
+);
+
+const Reject = ({ rejectFn, disabled }: RejectProps) => {
   const [open, setOpen] = useState(false);
-  const [reason, setReason] = useState<string>('');
+  const [reason, setReason] = useState('');
 
-  const handleClickOpen = () => {
-    setOpen(true);
-  };
+  useEffect(() => {
+    if (open) {
+      setReason('');
+    }
+  }, [open]);
 
-  const handleClose = () => {
+  const handleDialogClose = useCallback((_gesture: 'close-button' | 'escape') => {
     setOpen(false);
     setReason('');
-  };
+  }, []);
 
   const handleReject = () => {
     if (!reason.trim()) {
       return;
     }
     rejectFn(reason);
-    handleClose();
+    handleDialogClose('close-button');
   };
 
   return (
-    <div>
-      <Button color='danger' onClick={handleClickOpen} data-testid='push-reject-btn'>
+    <>
+      <Button
+        variant='danger'
+        onClick={() => setOpen(true)}
+        disabled={disabled}
+        data-testid='push-reject-btn'
+      >
         Reject
       </Button>
-      <Dialog
-        fullWidth
-        maxWidth='md'
-        open={open}
-        onClose={handleClose}
-        aria-labelledby='alert-dialog-title'
-        aria-describedby='alert-dialog-description'
-        style={{ margin: '0px 15px 0px 15px', padding: '20px' }}
-      >
-        <span
-          style={{
-            background: '#fff3cd',
-            border: '1px solid #ffc107',
-            borderRadius: '10px',
-            margin: '24px 24px 12px 24px',
-            padding: '24px 24px',
-            color: '#000000',
-          }}
+      {open ? (
+        <Dialog
+          title='Reject this contribution'
+          onClose={handleDialogClose}
+          renderHeader={RejectDialogHeader}
+          width='large'
+          height='auto'
         >
-          <div style={{ display: 'flex', flexDirection: 'row' }}>
-            <ErrorOutline fontSize='medium' htmlColor='#ffc107' />
-            <span style={{ fontSize: '16px', paddingLeft: '10px', fontWeight: 'bold' }}>
-              You are about to reject this contribution
-            </span>
-          </div>
-          <p style={{ fontSize: '15px', paddingLeft: '34px' }}>
-            This action will prevent this contribution from being published.
-            <br />
-            Please provide a reason for rejection to help the contributor understand the decision.
-          </p>
-        </span>
-        <DialogContent style={{ margin: '0px 24px', padding: '0px' }}>
-          <TextField
-            autoFocus
-            margin='dense'
-            id='reason'
-            label='Reason for rejection'
-            type='text'
-            fullWidth
-            multiline
-            rows={5}
-            variant='outlined'
-            value={reason}
-            onChange={(e) => setReason(e.target.value)}
-            placeholder='Provide details about why this contribution is being rejected...'
-            required
-          />
-        </DialogContent>
-        <DialogActions style={{ paddingTop: '1px', margin: '15px' }}>
-          <Button color='warning' onClick={handleClose}>
-            Cancel
-          </Button>
-          <Button
-            color='danger'
-            onClick={handleReject}
-            disabled={!reason.trim()}
-            data-testid='push-reject-confirm-btn'
-          >
-            <Block /> Reject
-          </Button>
-        </DialogActions>
-      </Dialog>
-    </div>
+          <Dialog.Body>
+            <Stack direction='vertical' gap='normal' padding='none'>
+              <Banner variant='warning' layout='compact'>
+                <Banner.Title
+                  as='h2'
+                  className='!text-base !font-semibold !text-[var(--fgColor-default)]'
+                >
+                  You are about to reject this contribution
+                </Banner.Title>
+                <Banner.Description>
+                  <Text as='span' className='!text-base !text-[var(--fgColor-default)]'>
+                    This will prevent the push from being published through the proxy. Please
+                    explain why so the contributor can address it.
+                  </Text>
+                </Banner.Description>
+              </Banner>
+              <FormControl required>
+                <FormControl.Label
+                  htmlFor={REJECT_REASON_ID}
+                  className='!text-base !font-normal !text-[var(--fgColor-default)]'
+                >
+                  Reason for rejection
+                </FormControl.Label>
+                <Textarea
+                  id={REJECT_REASON_ID}
+                  name='rejectReason'
+                  value={reason}
+                  onChange={(e) => setReason(e.target.value)}
+                  placeholder='Provide details about why this contribution is being rejected…'
+                  rows={5}
+                  block
+                  resize='vertical'
+                  aria-required
+                  autoFocus
+                  className='!text-base !text-[var(--fgColor-default)]'
+                />
+              </FormControl>
+            </Stack>
+          </Dialog.Body>
+          <Dialog.Footer>
+            <div className='flex w-full justify-end gap-2'>
+              <Button type='button' onClick={() => handleDialogClose('close-button')}>
+                Cancel
+              </Button>
+              <Button
+                type='button'
+                variant='danger'
+                disabled={!reason.trim()}
+                onClick={handleReject}
+                data-testid='push-reject-confirm-btn'
+              >
+                Reject
+              </Button>
+            </div>
+          </Dialog.Footer>
+        </Dialog>
+      ) : null}
+    </>
   );
 };
 

@@ -15,19 +15,17 @@
  */
 
 import React from 'react';
-import clsx from 'clsx';
-import { makeStyles } from '@material-ui/core/styles';
-import styles from '../../assets/jss/material-dashboard-react/components/typographyStyle';
-
-const useStyles = makeStyles(styles);
 
 interface DangerProps {
   children?: React.ReactNode;
 }
 
-const Danger: React.FC<DangerProps> = ({ children }) => {
-  const classes = useStyles();
-  return <div className={clsx(classes.primaryText, classes.dangerText)}>{children}</div>;
+const Danger = ({ children }: DangerProps) => {
+  return (
+    <div className="font-['Roboto','Helvetica','Arial',sans-serif] text-sm font-light leading-[1.5em] text-[#f44336]">
+      {children}
+    </div>
+  );
 };
 
 export default Danger;

@@ -26,14 +26,12 @@ const DEFAULT_LOCAL_USERS: DefaultLocalUser[] = [
     username: 'admin',
     password: 'admin',
     email: 'admin@place.com',
-    gitAccount: 'none',
     admin: true,
   },
   {
     username: 'user',
     password: 'user',
     email: 'user@place.com',
-    gitAccount: 'none',
     admin: false,
   },
 ];
@@ -48,7 +46,7 @@ const isKnownDefaultCredentialAttempt = (username: string, password: string): bo
 
 // Dynamic import to always get the current db module instance
 // This is necessary for test environments where modules may be reset
-const getDb = () => import('../../db');
+const getDb = () => import('../../db/index.js');
 
 export const configure = async (passport: PassportStatic): Promise<PassportStatic> => {
   passport.use(
@@ -116,16 +114,15 @@ export const createDefaultAdmin = async () => {
     username: string,
     password: string,
     email: string,
-    type: string,
     isAdmin: boolean,
   ) => {
     const user = await db.findUser(username);
     if (!user) {
-      await db.createUser(username, password, email, type, isAdmin, '', isProduction());
+      await db.createUser(username, password, email, isAdmin, '', isProduction());
     }
   };
 
   for (const u of DEFAULT_LOCAL_USERS) {
-    await createIfNotExists(u.username, u.password, u.email, u.gitAccount, u.admin);
+    await createIfNotExists(u.username, u.password, u.email, u.admin);
   }
 };

@@ -152,15 +152,24 @@ describe('SSHAgentProxy', () => {
     });
 
     it('should timeout when agent does not respond', async () => {
-      agentProxy = new SSHAgentProxy(mockChannel as any);
+      vi.useFakeTimers();
+      try {
+        agentProxy = new SSHAgentProxy(mockChannel as any);
 
-      mockChannel.write.mockImplementation(() => {
-        // Don't send any response, causing timeout
-        return true;
-      });
+        mockChannel.write.mockImplementation(() => {
+          // Don't send any response, causing timeout
+          return true;
+        });
 
-      await expect(agentProxy.getIdentities()).rejects.toThrow('Agent request timeout');
-    }, 15000);
+        const assertion = expect(agentProxy.getIdentities()).rejects.toThrow(
+          'Agent request timeout',
+        );
+        await vi.advanceTimersByTimeAsync(10001);
+        await assertion;
+      } finally {
+        vi.useRealTimers();
+      }
+    });
 
     it('should throw error for invalid identities response - too short', async () => {
       agentProxy = new SSHAgentProxy(mockChannel as any);
@@ -294,6 +303,178 @@ describe('SSHAgentProxy', () => {
       await expect(agentProxy.sign(publicKeyBlob, dataToSign)).rejects.toThrow(
         'Invalid signature blob: too short for algo length',
       );
+    });
+  });
+
+  describe('sign - edge cases', () => {
+    function sendResponse(response: Buffer) {
+      mockChannel.write.mockImplementation(() => {
+        setImmediate(() => {
+          const len = Buffer.allocUnsafe(4);
+          len.writeUInt32BE(response.length, 0);
+          mockChannel.emit('data', Buffer.concat([len, response]));
+        });
+        return true;
+      });
+    }
+
+    const pubKey = Buffer.alloc(32, 0x41);
+    const data = Buffer.from('data');
+
+    it('should throw error for unexpected sign response type', async () => {
+      agentProxy = new SSHAgentProxy(mockChannel as any);
+      sendResponse(Buffer.from([99]));
+
+      await expect(agentProxy.sign(pubKey, data)).rejects.toThrow('Unexpected response type: 99');
+    });
+
+    it('should throw error for incomplete signature blob', async () => {
+      agentProxy = new SSHAgentProxy(mockChannel as any);
+      // sig_blob_len=100 but only 2 bytes of data
+      sendResponse(
+        Buffer.concat([Buffer.from([14]), Buffer.from([0, 0, 0, 100]), Buffer.from([0, 0])]),
+      );
+
+      await expect(agentProxy.sign(pubKey, data)).rejects.toThrow(
+        'Invalid sign response: incomplete signature',
+      );
+    });
+
+    it('should throw error when sig blob too short for algo and sig length', async () => {
+      agentProxy = new SSHAgentProxy(mockChannel as any);
+      // sigBlob: algoLen=3 + 'rsa' but no sig_len field after → total 7 bytes < 4+3+4=11
+      const sigBlob = Buffer.concat([Buffer.from([0, 0, 0, 3]), Buffer.from('rsa')]);
+      sendResponse(
+        Buffer.concat([Buffer.from([14]), Buffer.from([0, 0, 0, sigBlob.length]), sigBlob]),
+      );
+
+      await expect(agentProxy.sign(pubKey, data)).rejects.toThrow(
+        'Invalid signature blob: too short for algo and sig length',
+      );
+    });
+
+    it('should throw error when signature bytes are incomplete', async () => {
+      agentProxy = new SSHAgentProxy(mockChannel as any);
+      // sigBlob: algoLen=3 + 'rsa' + sigLen=50 but only 1 byte of sig
+      const sigBlob = Buffer.concat([
+        Buffer.from([0, 0, 0, 3]),
+        Buffer.from('rsa'),
+        Buffer.from([0, 0, 0, 50]),
+        Buffer.from([0x01]),
+      ]);
+      sendResponse(
+        Buffer.concat([Buffer.from([14]), Buffer.from([0, 0, 0, sigBlob.length]), sigBlob]),
+      );
+
+      await expect(agentProxy.sign(pubKey, data)).rejects.toThrow(
+        'Invalid signature blob: incomplete signature bytes',
+      );
+    });
+  });
+
+  describe('parseIdentities - edge cases', () => {
+    function sendResponse(response: Buffer) {
+      mockChannel.write.mockImplementation(() => {
+        setImmediate(() => {
+          const len = Buffer.allocUnsafe(4);
+          len.writeUInt32BE(response.length, 0);
+          mockChannel.emit('data', Buffer.concat([len, response]));
+        });
+        return true;
+      });
+    }
+
+    it('should throw when key blob length is missing', async () => {
+      agentProxy = new SSHAgentProxy(mockChannel as any);
+      // type=12 + num_keys=1 but no blob length
+      sendResponse(Buffer.from([12, 0, 0, 0, 1]));
+
+      await expect(agentProxy.getIdentities()).rejects.toThrow('missing key blob length for key 0');
+    });
+
+    it('should throw when key blob is incomplete', async () => {
+      agentProxy = new SSHAgentProxy(mockChannel as any);
+      // type=12 + num_keys=1 + blob_len=10 but only 2 bytes of blob
+      sendResponse(Buffer.from([12, 0, 0, 0, 1, 0, 0, 0, 10, 0x41, 0x42]));
+
+      await expect(agentProxy.getIdentities()).rejects.toThrow('incomplete key blob for key 0');
+    });
+
+    it('should throw when comment length is missing', async () => {
+      agentProxy = new SSHAgentProxy(mockChannel as any);
+      // type=12 + num_keys=1 + blob_len=2 + blob(2 bytes) but no comment_len
+      sendResponse(Buffer.from([12, 0, 0, 0, 1, 0, 0, 0, 2, 0x41, 0x42]));
+
+      await expect(agentProxy.getIdentities()).rejects.toThrow('missing comment length for key 0');
+    });
+
+    it('should throw when comment is incomplete', async () => {
+      agentProxy = new SSHAgentProxy(mockChannel as any);
+      // type=12 + num_keys=1 + blob_len=2 + blob + comment_len=10 + only 1 byte
+      sendResponse(Buffer.from([12, 0, 0, 0, 1, 0, 0, 0, 2, 0x41, 0x42, 0, 0, 0, 10, 0x43]));
+
+      await expect(agentProxy.getIdentities()).rejects.toThrow('incomplete comment for key 0');
+    });
+
+    it('should set algorithm to unknown when key blob is too short', async () => {
+      agentProxy = new SSHAgentProxy(mockChannel as any);
+      // key blob of 2 bytes (< 4, can't read algo length)
+      const keyBlob = Buffer.from([0x01, 0x02]);
+      sendResponse(
+        Buffer.concat([
+          Buffer.from([12, 0, 0, 0, 1]),
+          Buffer.from([0, 0, 0, keyBlob.length]),
+          keyBlob,
+          Buffer.from([0, 0, 0, 1]),
+          Buffer.from('k'),
+        ]),
+      );
+
+      const ids = await agentProxy.getIdentities();
+      expect(ids[0].algorithm).toBe('unknown');
+    });
+
+    it('should set algorithm to unknown when algo data is incomplete', async () => {
+      agentProxy = new SSHAgentProxy(mockChannel as any);
+      // key blob: algoLen=10 but only 1 byte of algo data
+      const keyBlob = Buffer.from([0, 0, 0, 10, 0x41]);
+      sendResponse(
+        Buffer.concat([
+          Buffer.from([12, 0, 0, 0, 1]),
+          Buffer.from([0, 0, 0, keyBlob.length]),
+          keyBlob,
+          Buffer.from([0, 0, 0, 1]),
+          Buffer.from('k'),
+        ]),
+      );
+
+      const ids = await agentProxy.getIdentities();
+      expect(ids[0].algorithm).toBe('unknown');
+    });
+  });
+
+  describe('handleMessage - edge cases', () => {
+    it('should ignore empty messages from agent', async () => {
+      agentProxy = new SSHAgentProxy(mockChannel as any);
+
+      const validResponse = Buffer.from([12, 0, 0, 0, 0]); // empty identities
+
+      mockChannel.write.mockImplementation(() => {
+        setImmediate(() => {
+          // Send empty message first (length=0)
+          mockChannel.emit('data', Buffer.from([0, 0, 0, 0]));
+          // Then send valid response
+          setImmediate(() => {
+            const len = Buffer.allocUnsafe(4);
+            len.writeUInt32BE(validResponse.length, 0);
+            mockChannel.emit('data', Buffer.concat([len, validResponse]));
+          });
+        });
+        return true;
+      });
+
+      const ids = await agentProxy.getIdentities();
+      expect(ids).toHaveLength(0);
     });
   });
 

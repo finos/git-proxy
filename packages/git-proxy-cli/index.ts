@@ -406,14 +406,12 @@ async function reloadConfig() {
  * @param {string} username The username for the new user
  * @param {string} password The password for the new user
  * @param {string} email The email for the new user
- * @param {string} gitAccount The git account for the new user
  * @param {boolean} [admin=false] Whether the user should be an admin (optional)
  */
 async function createUser(
   username: string,
   password: string,
   email: string,
-  gitAccount: string,
   admin: boolean = false,
 ) {
   if (!fs.existsSync(GIT_PROXY_COOKIE_FILE)) {
@@ -431,7 +429,6 @@ async function createUser(
         username,
         password,
         email,
-        gitAccount,
         admin,
       },
       {
@@ -621,11 +618,6 @@ yargs(hideBin(process.argv)) // eslint-disable-line @typescript-eslint/no-unused
         demandOption: true,
         type: 'string',
       },
-      gitAccount: {
-        describe: 'Git account for the new user',
-        demandOption: true,
-        type: 'string',
-      },
       admin: {
         describe: 'Whether the user should be an admin (optional)',
         demandOption: false,
@@ -634,7 +626,7 @@ yargs(hideBin(process.argv)) // eslint-disable-line @typescript-eslint/no-unused
       },
     },
     handler(argv) {
-      createUser(argv.username, argv.password, argv.email, argv.gitAccount, argv.admin);
+      createUser(argv.username, argv.password, argv.email, argv.admin);
     },
   })
   .demandCommand(1, 'You need at least one command before moving on')

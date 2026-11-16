@@ -11,7 +11,7 @@ In order to start working with Docusaurus, please read the [Getting Started guid
 
 Running Docusaurus locally is very simple, just follow these steps:
 
-- Make sure `node` version is 14 or higher, using `node -v` ; you can use [nvm](https://github.com/nvm-sh/nvm) to install different node versions in your system.
+- Make sure `node` version is 24.21 or higher, using `node -v` ; you can use [nvm](https://github.com/nvm-sh/nvm) to install different node versions in your system.
 - `cd website ; npm install ; npm run start`
 
 The command should open your browser and point to `http://localhost:8080`.

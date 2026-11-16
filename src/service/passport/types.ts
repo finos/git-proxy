@@ -58,6 +58,5 @@ export type DefaultLocalUser = {
   username: string;
   password: string;
   email: string;
-  gitAccount: string;
   admin: boolean;
 };

@@ -21,7 +21,7 @@ import { Request } from 'express';
 
 import * as ldaphelper from './ldaphelper';
 import * as db from '../../db';
-import { getAuthMethods } from '../../config';
+import { getADPassword, getAuthMethods } from '../../config';
 import { ADProfile } from './types';
 import { handleErrorAndLog } from '../../utils/errors';
 
@@ -54,7 +54,13 @@ export const configure = async (passport: PassportStatic): Promise<PassportStati
       {
         passReqToCallback: true,
         integrated: false,
-        ldap: adConfig,
+        // The LDAP password is resolved from the GIT_PROXY_LDAP_PASSWORD environment
+        // variable (which takes precedence) or the config file. Resolving on a copy of
+        // adConfig avoids mutating the shared config object.
+        ldap: {
+          ...adConfig,
+          password: getADPassword(adConfig),
+        },
       },
       async function (
         req: Request & { user?: ADProfile },

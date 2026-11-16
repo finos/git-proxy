@@ -18,11 +18,34 @@ Source: [/src/proxy/processors/push-action/checkRepoInAuthorisedList.ts](https:/
 
 ## `parsePush`
 
-Parses the push request data which comes from the Git client as a buffer that contains packet line data. If anything unexpected happens during parsing, such as malformed pack data or multiple ref updates in a single push, the push will get rejected.
+Parses the push request data which comes from the Git client as a buffer that contains packet line data. If anything unexpected happens during parsing, such as malformed pack data, the push will get rejected.
 
-Also handles extraction of push contents, such as the details of the individual commits contained in the push and the details of `committer` (the user attempting to push the commits through the proxy).
+A push must update only one ref (branch or annotated tag). Pushes to multiple refs (such as `git push --tags`, `git push origin v1.0.0 v1.0.1` or `git push --follow-tags`) are rejected and must be split into multiple pushes.
+
+Also extracts the push contents: the ref being updated and the individual commits or the annotated tag contained in the pack, including their `author`, `committer` and `tagger` lines.
+
+Those lines are recorded for display and for the [`checkAuthorEmails`](#checkauthoremails) policy only. They are not used to decide who is pushing: they are text the client wrote. If the request arrived over an authenticated session (SSH or the dashboard), `parsePush` records that session's user as the pusher; otherwise the pusher is established by [`resolveUserFromToken`](#resolveuserfromtoken).
 
 Source: [/src/proxy/processors/push-action/parsePush.ts](https://github.com/finos/git-proxy/blob/main/src/proxy/processors/push-action/parsePush.ts)
+
+## `resolveUserFromToken`
+
+Establishes who is pushing from the credential that accompanied the push. The first processor in both the branch and tag chains.
+
+For an HTTPS push the token in the Basic-auth password is sent to the upstream SCM's "current user" endpoint. The account the SCM reports is looked up in the GitProxy user records (`scmIdentities`), and the matching user is recorded on the push as `user` and `userEmail`. The Basic-auth username half is ignored. Which hosts can be asked, and how, is set by [`scmProviders`](../configuration/push-identity.md) in the configuration.
+
+The push is blocked when:
+
+- no credential was presented, or it is not HTTP Basic
+- no provider is configured for the repository's host
+- the provider rejects the token or is unreachable
+- the account the token belongs to is not linked to any GitProxy user
+
+Successful lookups are cached for seven days by a hash of the token; rejections are not cached.
+
+Requests that already carry a session user (SSH, dashboard) skip this step.
+
+Source: [/src/proxy/processors/push-action/resolveUserFromToken.ts](https://github.com/finos/git-proxy/blob/main/src/proxy/processors/push-action/resolveUserFromToken.ts)
 
 ## `checkEmptyBranch`
 
@@ -78,15 +101,15 @@ Note that invalid regex patterns will throw an error during proxy startup. These
 
 Source: [/src/proxy/processors/push-action/checkAuthorEmails.ts](https://github.com/finos/git-proxy/blob/main/src/proxy/processors/push-action/checkAuthorEmails.ts)
 
-#### `checkUserPushPermission`
+## `checkUserPushPermission`
 
-Checks if the push has a valid user email associated to it (the email of the user making the push, **not the individual commit authors**), and if that user is allowed to push to that specific repo.
+Checks that the pusher recorded on the push by [`resolveUserFromToken`](#resolveuserfromtoken) (or by the SSH or dashboard session) is allowed to push to that specific repo.
 
-This step will fail on various scenarios such as:
+This step will fail when:
 
-- Push has no email associated to it (potentially a push parsing error)
-- The email associated to the push matches multiple GitProxy users
-- The user with the given email isn't in the repo's contributor list (`canPush`)
+- No pusher was recorded on the push
+- The recorded username no longer exists
+- The user isn't in the repo's contributor list (`canPush`)
 
 Note: The _pusher_ can potentially be a different user from the _commit author(s)_. In order to filter the commit authors, you must use the `commitConfig.author` config entry. See [`checkAuthorEmails`](#checkauthoremails) for more details.
 
@@ -94,13 +117,13 @@ Source: [/src/proxy/processors/push-action/checkUserPushPermission.ts](https://g
 
 ## `pullRemote`
 
-Clones the repository and temporarily stores it locally in a subdirectory of the _.remote_ folder in the deployment. Each clone is named using the base and head SHA of the push, ensuring a unique clone for each different push. The path to the subdirectory is set in the action as the `proxyGitPath` property and is used in subsequent steps.
+Clones the repository and temporarily stores it locally in a subdirectory of the _.remote_ folder in the deployment. Each clone is named using the push ID (a hash of the repository, ref and commit range), ensuring a unique clone for each different push. The path to the subdirectory is set in the action as the `proxyGitPath` property and is used in subsequent steps.
 
 For private repos, `pullRemote` uses the authorization headers from the push and uses them to authenticate the `git clone` operation.
 
 In the event that the clone fails, pullRemote will automatically delete the _.remote/\*_ directory that it created - unless that failure was caused by a concurrent request for the same push (so that the earlier request can complete if it is going to).
 
-If the clone succeeds then the chain will schedule deletion of the clone by [`clearBareClone`](#clearbareclone) after processing of the chain completes. This ensures that disk space used is recovered, subsequent pushes of the same SHA don't conflict and that user credentials cached in the `git clone` are removed.
+If the clone succeeds then the chain will schedule deletion of the clone by [`clearBareClone`](#clearbareclone) after processing of the chain completes. This ensures that disk space used is recovered, subsequent pushes with the same ID don't conflict and that user credentials cached in the `git clone` are removed.
 
 Source: [/src/proxy/processors/push-action/pullRemote.ts](https://github.com/finos/git-proxy/blob/main/src/proxy/processors/push-action/pullRemote.ts)
 
@@ -123,6 +146,8 @@ Source: [/src/proxy/processors/push-action/checkHiddenCommits.ts](https://github
 ## `checkIfWaitingAuth`
 
 Checks if the action has been authorised (approved by a reviewer). If so, allows the push to continue to the remote. It simply continues chain execution if the push hasn't been approved.
+
+An approval is only honoured on a record whose pusher was verified from a session or a push credential (`pusherVerified`). A record written before pusher verification existed carries whatever the pushed objects said, so an approval on it is ignored and the push is held for review again.
 
 Source: [/src/proxy/processors/push-action/checkIfWaitingAuth.ts](https://github.com/finos/git-proxy/blob/main/src/proxy/processors/push-action/checkIfWaitingAuth.ts)
 
@@ -148,7 +173,7 @@ Source: [/src/proxy/processors/push-action/preReceive.ts](https://github.com/fin
 
 Executes `git diff` to obtain the diff for the given revision range. If there are no commits (possibly due to a malformed push), the push is blocked.
 
-The data extracted in this step is later used in [`scanDiff`](#scandiff).
+The full diff is stored once in `action.diff` for review and later used in [`scanDiff`](#scandiff). The processors log the diff's byte count and scan findings without logging another copy of the full diff. Historical records with the diff in the step's `content` remain readable.
 
 Source: [/src/proxy/processors/push-action/getDiff.ts](https://github.com/finos/git-proxy/blob/main/src/proxy/processors/push-action/getDiff.ts)
 
@@ -218,6 +243,8 @@ Source: [/src/proxy/processors/push-action/blockForAuth.ts](https://github.com/f
 ## `audit`
 
 This action runs after a chain has been executed. It stores in the database the entire `Action` object along with the list of `steps` that the action has gone through and their associated logs or error messages that occurred during processing of the chain.
+
+Push list and profile activity responses return metadata without processor steps, `lastStep`, or diff content. Use `GET /api/v1/push/:id` to retrieve the full audit record and diff for review. When `lastStep` exactly matches the final entry in `steps`, the database stores a reference and restores `lastStep` on detail reads. A distinct `lastStep` is preserved. Historical diff content and logs remain readable and are not truncated.
 
 Note: **`audit` writes all actions** (push, pull, default/unclassified) to the DB.
 

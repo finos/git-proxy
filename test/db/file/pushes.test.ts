@@ -16,6 +16,7 @@
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import * as pushesModule from '../../../src/db/file/pushes';
+import { pushListProjection } from '../../../src/db/pushProjection';
 
 describe('File DB - Pushes', () => {
   beforeEach(() => {
@@ -96,6 +97,29 @@ describe('File DB - Pushes', () => {
         `push ${pushId} not found`,
       );
       expect(pushesModule.db.findOne).toHaveBeenCalledWith({ id: pushId }, expect.any(Function));
+    });
+  });
+
+  describe('list projections', () => {
+    it('omits steps and diff from list queries but not from the detail view', async () => {
+      const projection = vi.fn(() => cursor);
+      const cursor: any = { projection, sort: () => cursor, exec: (cb: any) => cb(null, []) };
+      vi.spyOn(pushesModule.db, 'find').mockReturnValue(cursor);
+      vi.spyOn(pushesModule.db, 'findOne').mockImplementation((_query: any, cb: any) =>
+        cb(null, null),
+      );
+
+      await pushesModule.getPushes({});
+      await pushesModule.getPushesForUserProfile([], 'alice');
+      await pushesModule.getPush('p1');
+
+      // Both `steps` and `diff` carry the full diff, the largest part of a push
+      // row, so neither may reach a list response. The detail view still returns
+      // the whole document.
+      expect(projection).toHaveBeenCalledTimes(2);
+      expect(projection).toHaveBeenNthCalledWith(1, pushListProjection);
+      expect(projection).toHaveBeenNthCalledWith(2, pushListProjection);
+      expect(pushesModule.db.findOne).toHaveBeenCalledWith({ id: 'p1' }, expect.any(Function));
     });
   });
 });

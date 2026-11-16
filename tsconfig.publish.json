@@ -7,10 +7,8 @@
   },
   "include": ["src/**/*", "index.ts"],
   "exclude": [
-    "experimental/**",
     "plugins/**",
     "./dist/**",
-    "src/ui/**",
     "**/*.tsx",
     "**/*.jsx",
     "./src/context.js",

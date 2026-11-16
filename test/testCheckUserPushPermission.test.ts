@@ -53,14 +53,14 @@ describe('checkUserPushPermission', () => {
 
   it('allows pushes from an approved committer', async () => {
     const action = new Action('1', 'type', 'method', 1, TEST_URL);
-    action.userEmail = TEST_EMAIL_1;
+    action.user = TEST_USERNAME_1;
     const { error } = await processor.exec(req, action);
     expect(error).toBe(false);
   });
 
   it('blocks pushes from an unapproved committer', async () => {
     const action = new Action('1', 'type', 'method', 1, TEST_URL);
-    action.userEmail = TEST_EMAIL_2;
+    action.user = TEST_USERNAME_2;
     const { error, errorMessage } = await processor.exec(req, action);
     expect(error).toBe(true);
     expect(errorMessage).toContain('Your push has been blocked');
@@ -68,7 +68,7 @@ describe('checkUserPushPermission', () => {
 
   it('blocks pushes from an unknown committer', async () => {
     const action = new Action('1', 'type', 'method', 1, TEST_URL);
-    action.userEmail = TEST_EMAIL_3;
+    action.user = 'unknown-user';
     const { error, errorMessage } = await processor.exec(req, action);
     expect(error).toBe(true);
     expect(errorMessage).toContain('Your push has been blocked');

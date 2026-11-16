@@ -71,10 +71,15 @@ describe('OIDC auth method', () => {
     // First mock the dependencies
     vi.resetModules();
     vi.doMock('../src/config', async () => {
-      const actual = await vi.importActual('../src/config');
+      const actual = await vi.importActual<typeof import('../src/config')>('../src/config');
       return {
         ...actual,
         initUserConfig: vi.fn(),
+        // Resolve the client secret with the same precedence as the real resolver but
+        // reading process.env live, so the env-override test is not affected by when
+        // serverConfig captured the environment at module load.
+        getOIDCClientSecret: (oidcConfig: { clientSecret?: string }) =>
+          process.env.GIT_PROXY_OIDC_CLIENT_SECRET || oidcConfig.clientSecret,
       };
     });
     vi.doMock('fs', async (importOriginal) => {
@@ -114,6 +119,31 @@ describe('OIDC auth method', () => {
     expect(passportStub.use).toHaveBeenCalledOnce();
     expect(passportStub.serializeUser).toHaveBeenCalledOnce();
     expect(passportStub.deserializeUser).toHaveBeenCalledOnce();
+  });
+
+  it('should use the config file client secret when GIT_PROXY_OIDC_CLIENT_SECRET is not set', async () => {
+    delete process.env.GIT_PROXY_OIDC_CLIENT_SECRET;
+    vi.resetModules();
+    const oidcModule = await import('../src/service/passport/oidc');
+    await oidcModule.configure(passportStub);
+
+    // discovery is called as discovery(server, clientID, clientSecret)
+    expect(discoveryStub).toHaveBeenCalledOnce();
+    expect(discoveryStub.mock.calls[0][2]).toBe('test-client-secret');
+  });
+
+  it('should prefer GIT_PROXY_OIDC_CLIENT_SECRET over the config file client secret', async () => {
+    process.env.GIT_PROXY_OIDC_CLIENT_SECRET = 'secret-from-env';
+    try {
+      vi.resetModules();
+      const oidcModule = await import('../src/service/passport/oidc');
+      await oidcModule.configure(passportStub);
+
+      expect(discoveryStub).toHaveBeenCalledOnce();
+      expect(discoveryStub.mock.calls[0][2]).toBe('secret-from-env');
+    } finally {
+      delete process.env.GIT_PROXY_OIDC_CLIENT_SECRET;
+    }
   });
 
   it('should authenticate an existing user', async () => {

@@ -91,7 +91,19 @@ describe('isPackPost()', () => {
     expect(isPackPost({ method: 'POST', url: '/a.git/git-upload-pack' } as Request)).toBe(true);
   });
 
+  it('returns true for git-upload-pack POST without a .git repo suffix', () => {
+    expect(isPackPost({ method: 'POST', url: '/a/b/git-upload-pack' } as Request)).toBe(true);
+    expect(
+      isPackPost({ method: 'POST', url: '/github.com/org/repo/git-receive-pack' } as Request),
+    ).toBe(true);
+  });
+
   it('returns false for other URLs', () => {
     expect(isPackPost({ method: 'POST', url: '/info/refs' } as Request)).toBe(false);
+  });
+
+  // Single path segment is not a repo + pack operation (boundary for optional .git).
+  it('returns false for git-upload-pack POST with no repository path segment', () => {
+    expect(isPackPost({ method: 'POST', url: '/git-upload-pack' } as Request)).toBe(false);
   });
 });
