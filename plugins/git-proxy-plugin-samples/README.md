@@ -53,7 +53,7 @@ If you look at the plugin code, you'll notice that they don't import each other.
 - `pullData.base` / `action.commitFrom` and `action.commitTo`: The pull's diff range. The base is the first of the client's `haves` that exists upstream (all zeros if none, meaning a full-tree scan). `commitTo` is the first want.
 - `pullData.wantedRefs`, `action.branch` and `action.tags`: The ref names the wanted commits resolve to.
 
-The plugin runs `git` through `simple-git`. For HTTPS upstreams with self-signed certificates, configure git with the right CA (or set `GIT_SSL_NO_VERIFY`).
+The plugin runs `git` through `simple-git`. For HTTPS upstreams with self-signed certificates, configure git with the right CA.
 
 ## Contributing
 
