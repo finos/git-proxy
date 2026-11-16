@@ -23,6 +23,7 @@
     "@docusaurus/theme-mermaid": "4.0.0-canary-6881",
     "@mermaid-js/layout-elk": "^1.0.1",
     "ajv": "^8.17.1",
+    "asciinema-player": "^3.17.0",
     "axios": "^1.13.4",
     "classnames": "^2.5.1",
     "clsx": "^2.1.1",
@@ -33,7 +34,7 @@
     "react-player": "^3.4.0",
     "react-slick": "^0.31.0",
     "react-social-media-embed": "^2.5.18",
-    "slick-carousel": "^1.8.1",
+    "slick-carousel": "^2.0.0",
     "webpack": "^5.111.0"
   },
   "browserslist": {

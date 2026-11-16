@@ -33,7 +33,6 @@ export default defineConfig({
       include: ['src/**/*.ts'],
       exclude: [
         'dist',
-        'experimental',
         'packages',
         'plugins',
         'scripts',

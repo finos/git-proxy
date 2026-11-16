@@ -498,8 +498,15 @@ describe('Push API', () => {
     const push = res.body.find((p: Action) => p.id === TEST_PUSH.id);
     expect(push).toBeDefined();
 
-    // Check that all values in push are in TEST_PUSH, except for _id
-    expect(push).toMatchObject(TEST_PUSH);
+    expect(push).toMatchObject({
+      id: TEST_PUSH.id,
+      url: TEST_PUSH.url,
+      user: TEST_PUSH.user,
+      userEmail: TEST_PUSH.userEmail,
+      pusherVerified: true,
+    });
+    expect(push).not.toHaveProperty('steps');
+    expect(push).not.toHaveProperty('lastStep');
     expect(push.canceled).toBe(false);
   });
 

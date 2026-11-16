@@ -91,6 +91,7 @@ class Action {
   commitData?: CommitData[] = [];
   commitFrom?: string;
   commitTo?: string;
+  readonly diff?: string;
   branch?: string;
   message?: string;
   author?: string;
@@ -209,6 +210,20 @@ class Action {
    */
   setMessage(message: string): void {
     this.message = message;
+  }
+
+  /**
+   * Set the diff for the action. The diff can only be set once, so later
+   * processors and plugins cannot change it.
+   * @param {string} diff the diff
+   */
+  setDiff(diff: string): void {
+    Object.defineProperty(this, 'diff', {
+      value: diff,
+      enumerable: true, // still serialised to the DB and the API
+      writable: false,
+      configurable: false,
+    });
   }
 
   /**

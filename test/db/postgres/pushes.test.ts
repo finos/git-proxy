@@ -15,6 +15,7 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { Action, RequestType, Step } from '../../../src/proxy/actions';
 
 const mockQuery = vi.fn();
 
@@ -70,7 +71,7 @@ describe('PostgreSQL - Pushes', async () => {
       await getPushes({ id: 'x' } as never);
 
       const [sql, params] = mockQuery.mock.calls[0];
-      expect(sql).not.toContain('WHERE');
+      expect(sql).toMatch(/FROM pushes\s+ORDER BY timestamp DESC$/);
       expect(params).toEqual([]);
     });
   });
@@ -83,6 +84,27 @@ describe('PostgreSQL - Pushes', async () => {
   });
 
   describe('writeAudit', () => {
+    it('compacts the final step and restores it on detail reads', async () => {
+      const action = new Action(
+        'compact',
+        RequestType.PUSH,
+        'POST',
+        123,
+        'https://example.com/a/b',
+      );
+      action.addStep(new Step('diff', false, null, false, null, 'reviewable diff'));
+      mockQuery.mockResolvedValue({ rowCount: 1, rows: [] });
+      await writeAudit(action);
+      const stored = JSON.parse(mockQuery.mock.calls[0][1][9]);
+      expect(stored).not.toHaveProperty('lastStep');
+      expect(stored._lastStepIndex).toBe(0);
+      mockQuery.mockResolvedValue({ rowCount: 1, rows: [{ data: stored }] });
+      const detail = await getPush(action.id);
+      expect(detail?.lastStep).toEqual(action.lastStep);
+      expect(detail).not.toHaveProperty('_lastStepIndex');
+      expect(action.lastStep?.content).toBe('reviewable diff');
+    });
+
     it('throws Invalid id when id is not a string', async () => {
       const action = { id: 42, timestamp: 1 } as unknown as Parameters<typeof writeAudit>[0];
       await expect(writeAudit(action)).rejects.toThrow('Invalid id');
@@ -222,7 +244,7 @@ describe('PostgreSQL - Pushes', async () => {
   });
 
   describe('list projection', () => {
-    it('drops steps from list results but not from the detail view', async () => {
+    it('selects metadata fields in SQL while detail reads retain the entire document', async () => {
       mockQuery.mockResolvedValue({ rowCount: 0, rows: [] });
 
       await getPushes({});
@@ -232,9 +254,15 @@ describe('PostgreSQL - Pushes', async () => {
       const [listSql] = mockQuery.mock.calls[0];
       const [profileSql] = mockQuery.mock.calls[1];
       const [detailSql] = mockQuery.mock.calls[2];
-      expect(listSql).toContain("data - 'steps'");
-      expect(profileSql).toContain("data - 'steps'");
-      expect(detailSql).not.toContain("data - 'steps'");
+      for (const sql of [listSql, profileSql]) {
+        expect(sql).toContain('jsonb_object_agg');
+        expect(sql).toContain("'tagData'");
+        expect(sql).toContain("'rejection'");
+        expect(sql).not.toContain("'steps'");
+        expect(sql).not.toContain("'lastStep'");
+        expect(sql).not.toContain("'diff'");
+      }
+      expect(detailSql).toBe('SELECT data FROM pushes WHERE id = $1');
     });
   });
 
@@ -247,7 +275,7 @@ describe('PostgreSQL - Pushes', async () => {
       const [sql, params] = mockQuery.mock.calls[0];
       expect(sql).toContain("data->'attestation'->'reviewer'->>'username'");
       expect(sql).toMatch(/ORDER BY timestamp DESC/);
-      expect(sql).not.toContain('userEmail');
+      expect(sql).not.toContain("(data->>'userEmail') = ANY");
       expect(params).toEqual(['Alice']);
     });
 
