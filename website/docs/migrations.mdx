@@ -1,0 +1,25 @@
+# Database Migrations
+
+GitProxy migrates its database automatically on startup, before the proxy and API accept requests. Each migration runs once and is recorded; a migration that fails is not marked complete and runs again on the next start. Most upgrades need no manual steps.
+
+| Upgrade   | What changes                                                                                                                          | Action needed                                                                           |
+| --------- | ------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| 2.3 → 2.4 | Repository pages read saved activity summaries (push counts, latest push and pending timestamps) instead of scanning the push history | Only in the cases [below](#23--24-repository-activity-summaries)                        |
+| 2.1 → 2.2 | Creation dates are added to existing repositories, legacy push IDs are re-keyed, and `gitAccount` becomes the user's GitHub identity  | None. See [Push identity](/docs/configuration/push-identity) for users who need to link |
+
+## 2.3 → 2.4: Repository activity summaries
+
+The first start after the upgrade builds the summaries from the existing push records (migration `20261013-repository-activity`, plus PostgreSQL schema migration 9). Audit records are not changed. Allow extra startup time for large histories. With MongoDB, upgrade all instances together: older versions do not keep the summaries up to date.
+
+**MongoDB: duplicate push IDs.** The migration adds a unique index on push IDs. If duplicates exist, startup fails, lists example IDs, and leaves every record intact. Back up the database, reconcile the duplicate records according to your audit retention policy, and restart. GitProxy does not choose which audit to discard.
+
+**PostgreSQL with `autoMigrate: false`.** Apply the migration with `npm run migrate:postgres:schema` using DDL-capable credentials before starting 2.4. Grant the runtime role SELECT, INSERT, UPDATE and DELETE on `push_activity_changes`, `push_activity` and `repo_push_activity`.
+
+**Rebuilding summaries.** Summaries are derived data. After restoring only the push records, or restoring PostgreSQL with triggers disabled, stop GitProxy and rebuild them with the deployment's configuration:
+
+```bash
+CONFIG_FILE=/path/to/proxy.config.json node -e \
+  "require('@finos/git-proxy/db').rebuildRepoPushRollups().then(() => process.exit(0), error => { console.error(error); process.exit(1); })"
+```
+
+This works for MongoDB, PostgreSQL and the file-based database. The file-based database also rebuilds its summaries on every restart.
