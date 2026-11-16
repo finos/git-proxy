@@ -16,6 +16,7 @@
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import * as pushesModule from '../../../src/db/file/pushes';
+import { pushListProjection } from '../../../src/db/pushProjection';
 
 describe('File DB - Pushes', () => {
   beforeEach(() => {
@@ -116,8 +117,8 @@ describe('File DB - Pushes', () => {
       // row, so neither may reach a list response. The detail view still returns
       // the whole document.
       expect(projection).toHaveBeenCalledTimes(2);
-      expect(projection).toHaveBeenNthCalledWith(1, { steps: 0, diff: 0 });
-      expect(projection).toHaveBeenNthCalledWith(2, { steps: 0, diff: 0 });
+      expect(projection).toHaveBeenNthCalledWith(1, pushListProjection);
+      expect(projection).toHaveBeenNthCalledWith(2, pushListProjection);
       expect(pushesModule.db.findOne).toHaveBeenCalledWith({ id: 'p1' }, expect.any(Function));
     });
   });

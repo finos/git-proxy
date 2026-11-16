@@ -286,6 +286,7 @@ certs/*.pem
 
 # Generated from testing
 /test/fixtures/test-package/package-lock.json
+cypress/screenshots/
 
 # Agentic AI generated files
 /plans

@@ -437,17 +437,21 @@ export default function UserProfile(): React.ReactElement {
         />
         <Stack direction='vertical' gap='condensed' padding='none' className='min-w-0'>
           <Stack direction='horizontal' gap='normal' padding='none' align='center' wrap='wrap'>
-            <Text as='h1' className='m-0! text-xl! font-semibold! tracking-tight!'>
+            <Text
+              as='h1'
+              className='m-0! text-xl! font-semibold! tracking-tight!'
+              data-testid='profile-name'
+            >
               {profileNameLabel}
             </Text>
             {user.admin ? (
-              <Label variant='accent' size='small'>
+              <Label variant='accent' size='small' data-testid='profile-admin-status'>
                 Admin
               </Label>
             ) : null}
           </Stack>
           {emailText ? (
-            <Text className='mt-1 block text-sm text-(--fgColor-muted)'>
+            <Text className='mt-1 block text-sm text-(--fgColor-muted)' data-testid='profile-email'>
               <PrimerLink className={externalLinkClass} href={`mailto:${emailText}`}>
                 {emailText}
               </PrimerLink>
