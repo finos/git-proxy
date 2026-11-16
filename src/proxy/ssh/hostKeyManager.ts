@@ -68,6 +68,7 @@ export function ensureHostKey(config: HostKeyConfig): Buffer {
     } catch (error) {
       throw new Error(
         `Failed to read existing SSH host key at ${privateKeyPath}: ${error instanceof Error ? error.message : String(error)}`,
+        { cause: error },
       );
     }
   }
@@ -127,7 +128,9 @@ export function ensureHostKey(config: HostKeyConfig): Buffer {
     );
     console.error('[SSH] 3. Disable SSH in proxy.config.json: "ssh": { "enabled": false }');
 
-    throw new Error(`Failed to generate SSH host key: ${errorMessage}. See console for details.`);
+    throw new Error(`Failed to generate SSH host key: ${errorMessage}. See console for details.`, {
+      cause: error,
+    });
   }
 }
 
