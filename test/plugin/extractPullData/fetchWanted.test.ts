@@ -120,6 +120,24 @@ describe('fetchWanted processor', () => {
     expect(gitRaw).not.toHaveBeenCalled();
   });
 
+  it('does not skip checkout after an incremental (have==want) remember', async () => {
+    const poisoned = makeAction();
+    poisoned.pullData = fetchPull({
+      wants: [WANT],
+      haves: [WANT],
+      fetchedWants: [WANT],
+      base: WANT,
+    });
+    rememberRecentFetch(poisoned);
+
+    gitRaw.mockClear();
+    const clone = await fetchWanted(req, makeAction());
+
+    expect(clone.pullData?.repeatedRound).toBeUndefined();
+    expect(clone.commitTo).toBe(WANT);
+    expect(gitRaw).toHaveBeenCalled();
+  });
+
   it('does not skip checkout when rememberRecentFetch is omitted (blocked pull)', async () => {
     await fetchWanted(req, makeAction());
     // Simulate a scanner rejecting the pull: chain must not call rememberRecentFetch.
@@ -163,6 +181,18 @@ describe('fetchWanted processor', () => {
     expect(result.proxyGitPath).toBeUndefined();
     expect(gitRaw).not.toHaveBeenCalled();
     expect(result.steps[0].logs.join('\n')).toContain('client up to date');
+  });
+
+  it('rejects want-ref fetches without want OIDs', async () => {
+    const action = makeAction();
+    action.pullData = fetchPull({ wants: [], wantRefs: ['refs/heads/main'] });
+
+    const result = await fetchWanted(req, action);
+
+    expect(result.error).toBe(true);
+    expect(result.errorMessage).toContain('want-ref');
+    expect(result.proxyGitPath).toBeUndefined();
+    expect(gitRaw).not.toHaveBeenCalled();
   });
 
   it('rejects invalid object ids in wants', async () => {
