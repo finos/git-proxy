@@ -46,7 +46,7 @@
  * so we use absolute URLs constructed from Cypress.config('baseUrl').
  */
 function getApiBaseUrl() {
-  return Cypress.env('API_BASE_URL') || Cypress.config('baseUrl');
+  return Cypress.expose('API_BASE_URL') || Cypress.config('baseUrl');
 }
 
 /**
@@ -228,7 +228,7 @@ Cypress.Commands.add('getTestRepoId', () => {
         `GET ${url} returned non-array (${typeof res.body}): ${JSON.stringify(res.body).slice(0, 500)}`,
       );
     }
-    const gitServerTarget = Cypress.env('GIT_SERVER_TARGET') || 'git-server:8443';
+    const gitServerTarget = Cypress.expose('GIT_SERVER_TARGET') || 'git-server:8443';
     const repo = res.body.find(
       (r) => r.url === `https://${gitServerTarget}/test-owner/test-repo.git`,
     );
@@ -345,7 +345,7 @@ Cypress.Commands.add('deleteTestUser', (username) => {
  * with plain basic auth. Token names must be unique per user, so each call mints its own.
  */
 Cypress.Commands.add('mintUpstreamToken', (username, password) => {
-  const gitServerUrl = Cypress.env('GIT_SERVER_URL') || 'https://localhost:8443';
+  const gitServerUrl = Cypress.expose('GIT_SERVER_URL') || 'https://localhost:8443';
   const name = `cypress-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
   const body = JSON.stringify({ name, scopes: ['write:repository', 'read:user'] });
   // curl rather than cy.request: the test server's certificate is self-signed.
@@ -363,8 +363,8 @@ Cypress.Commands.add('mintUpstreamToken', (username, password) => {
 });
 
 Cypress.Commands.add('createPush', (gitUser, gitPassword, gitEmail, uniqueSuffix) => {
-  const proxyUrl = Cypress.env('GIT_PROXY_URL') || 'http://localhost:8000';
-  const gitServerTarget = Cypress.env('GIT_SERVER_TARGET') || 'git-server:8443';
+  const proxyUrl = Cypress.expose('GIT_PROXY_URL') || 'http://localhost:8000';
+  const gitServerTarget = Cypress.expose('GIT_SERVER_TARGET') || 'git-server:8443';
   const repoUrl = `${proxyUrl}/${gitServerTarget}/test-owner/test-repo.git`;
   const cloneDir = `/tmp/cypress-push-${uniqueSuffix}`;
 
