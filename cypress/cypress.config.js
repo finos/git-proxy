@@ -15,6 +15,7 @@
  */
 
 const { defineConfig } = require('cypress');
+const { createPush, mintUpstreamToken } = require('./tasks');
 
 // npm scripts pass cypress/cypress.config.js as config
 // file and run from there
@@ -32,6 +33,7 @@ module.exports = defineConfig({
     baseUrl: process.env.CYPRESS_BASE_URL || 'http://localhost:3000',
     specPattern: 'cypress/e2e/*.cy.{js,ts}',
     chromeWebSecurity: false, // Required for OIDC testing
+    taskTimeout: 120000,
     setupNodeEvents(on, config) {
       config.expose ??= {};
       for (const key of PUBLIC_CONFIG_KEYS) {
@@ -45,6 +47,8 @@ module.exports = defineConfig({
           console.log(message);
           return null;
         },
+        mintUpstreamToken,
+        createPush,
       });
 
       return config;
