@@ -108,6 +108,7 @@ describe('fetchWanted processor', () => {
 
   it('skips checkout on a later negotiation round only after the chain approved the wants', async () => {
     const first = await fetchWanted(req, makeAction());
+    expect(first.pullData?.base).toBe('0000000000000000000000000000000000000000');
     rememberRecentFetch(first);
 
     gitRaw.mockClear();

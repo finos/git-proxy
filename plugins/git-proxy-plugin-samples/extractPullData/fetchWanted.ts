@@ -63,6 +63,7 @@ export const clearRecentFetches = (): void => recentFetches.clear();
 export const rememberRecentFetch = (action: Action): void => {
   const wants = action.pullData?.fetchedWants;
   if (!wants?.length) return;
+  if (action.pullData?.base !== EMPTY_COMMIT_HASH) return;
   recentFetches.set(roundKey(action.url, wants), Date.now());
 };
 
