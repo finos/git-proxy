@@ -181,3 +181,27 @@
   padding: 0 10px;
   box-sizing: border-box;
 }
+
+.navbar-sidebar
+  .menu__link:is(
+    .header-read-doc-link,
+    .header-slack-link,
+    .header-star-link,
+    .header-fork-link,
+    .header-github-link
+  ) {
+  align-items: center;
+  gap: 12px;
+  min-height: 44px;
+}
+
+.navbar-sidebar
+  .menu__link:is(
+    .header-read-doc-link,
+    .header-slack-link,
+    .header-star-link,
+    .header-fork-link,
+    .header-github-link
+  )::after {
+  content: attr(aria-label);
+}

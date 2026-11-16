@@ -35,7 +35,7 @@ export default function Avatar({ name, description, username }) {
 
   return (
     <div className='avatar avatar--vertical margin-bottom--xl'>
-      <img className='avatar__photo avatar__photo--xl margin-bottom--md' src={imageUrl} />
+      <img className='avatar__photo avatar__photo--xl margin-bottom--md' src={imageUrl} alt='' />
       <div className='avatar__intro'>
         <div className='avatar__name'>{name}</div>
         <small className='avatar__subtitle'>{description}</small>
