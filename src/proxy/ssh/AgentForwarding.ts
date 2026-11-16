@@ -146,7 +146,6 @@ export class LazySSHAgent extends BaseAgent {
   ): void {
     if (typeof options === 'function') {
       callback = options;
-      options = undefined;
     }
 
     if (!callback) {

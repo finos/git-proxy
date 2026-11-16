@@ -15,7 +15,6 @@
  */
 
 describe('Repo', () => {
-  let cookies;
   let repoName;
 
   before(() => {
@@ -120,7 +119,7 @@ describe('Repo', () => {
             url: `https://github.com/cypress-test/${repoName}.git`,
           },
           headers: {
-            cookie: cookies?.join('; ') || '',
+            cookie: '',
             'X-CSRF-TOKEN': csrfToken,
           },
         }).then((res) => {
@@ -162,7 +161,7 @@ describe('Repo', () => {
           method: 'DELETE',
           url: `${Cypress.env('API_BASE_URL') || Cypress.config('baseUrl')}/api/v1/repo/${repoId}/delete`,
           headers: {
-            cookie: cookies?.join('; ') || '',
+            cookie: '',
             'X-CSRF-TOKEN': csrfToken,
           },
         });
