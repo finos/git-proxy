@@ -82,9 +82,6 @@ const getDiffViolations = (
 };
 
 const combineMatches = (organization: string) => {
-  // Read the config here, each time a push is scanned, rather than once at the top of
-  // this file. The user's config is loaded after this module is first imported, so a
-  // top-level read would capture only the empty defaults, not the configured rules.
   const commitConfig = getCommitConfig();
   const privateOrganizations = getPrivateOrganizations();
 
