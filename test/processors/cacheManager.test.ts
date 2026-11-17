@@ -40,14 +40,14 @@ describe('CacheManager', () => {
   });
 
   describe('getCacheStats', () => {
-    it('should return empty stats for empty cache', () => {
-      const stats = cacheManager.getCacheStats();
+    it('should return empty stats for empty cache', async () => {
+      const stats = await cacheManager.getCacheStats();
       expect(stats.totalRepositories).toBe(0);
       expect(stats.totalSizeBytes).toBe(0);
       expect(stats.repositories).toEqual([]);
     });
 
-    it('should calculate stats for repositories in cache', () => {
+    it('should calculate stats for repositories in cache', async () => {
       const repo1 = path.join(testCacheDir, 'repo1.git');
       const repo2 = path.join(testCacheDir, 'repo2.git');
 
@@ -57,7 +57,7 @@ describe('CacheManager', () => {
       fs.writeFileSync(path.join(repo1, 'file1.txt'), 'a'.repeat(1024 * 1024)); // 1MB
       fs.writeFileSync(path.join(repo2, 'file2.txt'), 'b'.repeat(1024 * 1024)); // 1MB
 
-      const stats = cacheManager.getCacheStats();
+      const stats = await cacheManager.getCacheStats();
       expect(stats.totalRepositories).toBe(2);
       expect(stats.totalSizeBytes).toBeGreaterThanOrEqual(2 * 1024 * 1024); // At least 2MB total in bytes
       expect(stats.repositories).toHaveLength(2);
@@ -66,7 +66,7 @@ describe('CacheManager', () => {
       expect(stats.repositories[0]).toHaveProperty('lastAccessed');
     });
 
-    it('should have timestamps for repositories', () => {
+    it('should have timestamps for repositories', async () => {
       const repo1 = path.join(testCacheDir, 'repo1.git');
       const repo2 = path.join(testCacheDir, 'repo2.git');
 
@@ -76,7 +76,7 @@ describe('CacheManager', () => {
       fs.mkdirSync(repo2);
       fs.writeFileSync(path.join(repo2, 'file2.txt'), 'test');
 
-      const stats = cacheManager.getCacheStats();
+      const stats = await cacheManager.getCacheStats();
       expect(stats.repositories).toHaveLength(2);
       // Each should have a valid timestamp
       stats.repositories.forEach((repo) => {
@@ -94,17 +94,32 @@ describe('CacheManager', () => {
       fs.mkdirSync(repoPath);
       fs.writeFileSync(path.join(repoPath, 'file.txt'), 'test');
 
-      const statsBefore = cacheManager.getCacheStats();
+      const statsBefore = await cacheManager.getCacheStats();
       const timeBefore = statsBefore.repositories[0].lastAccessed.getTime();
 
       await new Promise((resolve) => setTimeout(resolve, 100));
 
       await cacheManager.touchRepository(repoName);
 
-      const statsAfter = cacheManager.getCacheStats();
+      const statsAfter = await cacheManager.getCacheStats();
       const timeAfter = statsAfter.repositories[0].lastAccessed.getTime();
 
       expect(timeAfter).toBeGreaterThan(timeBefore);
+    });
+
+    it('should re-measure only the touched repository', async () => {
+      const repoPath = path.join(testCacheDir, 'repo.git');
+      fs.mkdirSync(repoPath);
+      fs.writeFileSync(path.join(repoPath, 'a.txt'), 'a'.repeat(1024));
+      const sizeOf = async () => (await cacheManager.getCacheStats()).totalSizeBytes;
+
+      expect(await sizeOf()).toBe(1024);
+
+      fs.writeFileSync(path.join(repoPath, 'b.txt'), 'b'.repeat(1024));
+      expect(await sizeOf()).toBe(1024);
+
+      await cacheManager.touchRepository('repo.git');
+      expect(await sizeOf()).toBe(2048);
     });
 
     it('should not throw error for non-existent repository', async () => {
@@ -122,7 +137,7 @@ describe('CacheManager', () => {
         fs.writeFileSync(path.join(repoPath, 'file.txt'), 'a'.repeat(100 * 1024)); // 100KB
       }
 
-      const statsBefore = cacheManager.getCacheStats();
+      const statsBefore = await cacheManager.getCacheStats();
       expect(statsBefore.totalRepositories).toBe(4);
 
       const result = await cacheManager.enforceLimits();
@@ -130,7 +145,7 @@ describe('CacheManager', () => {
       expect(result.removedRepos.length).toBeGreaterThanOrEqual(1);
       expect(result.freedBytes).toBeGreaterThanOrEqual(0);
 
-      const statsAfter = cacheManager.getCacheStats();
+      const statsAfter = await cacheManager.getCacheStats();
       expect(statsAfter.totalRepositories).toBeLessThanOrEqual(3);
     });
 
@@ -140,7 +155,7 @@ describe('CacheManager', () => {
       fs.mkdirSync(repo1);
       fs.writeFileSync(path.join(repo1, 'largefile.txt'), 'a'.repeat(2 * 1024 * 1024)); // 2MB
 
-      const statsBefore = cacheManager.getCacheStats();
+      const statsBefore = await cacheManager.getCacheStats();
       expect(statsBefore.totalSizeBytes).toBeGreaterThan(1024 * 1024); // Greater than 1MB in bytes
 
       const result = await cacheManager.enforceLimits();
@@ -148,8 +163,20 @@ describe('CacheManager', () => {
       expect(result.removedRepos).toHaveLength(1);
       expect(result.freedBytes).toBeGreaterThan(1024 * 1024); // Greater than 1MB in bytes
 
-      const statsAfter = cacheManager.getCacheStats();
+      const statsAfter = await cacheManager.getCacheStats();
       expect(statsAfter.totalRepositories).toBe(0);
+    });
+
+    it('should forget the size of an evicted repository', async () => {
+      const repoPath = path.join(testCacheDir, 'repo1.git');
+      fs.mkdirSync(repoPath);
+      fs.writeFileSync(path.join(repoPath, 'largefile.txt'), 'a'.repeat(2 * 1024 * 1024)); // 2MB
+      await cacheManager.enforceLimits();
+
+      fs.mkdirSync(repoPath);
+      fs.writeFileSync(path.join(repoPath, 'small.txt'), 'test');
+
+      expect((await cacheManager.getCacheStats()).totalSizeBytes).toBe(4);
     });
 
     it('should not remove anything if limits not exceeded', async () => {
@@ -187,7 +214,7 @@ describe('CacheManager', () => {
       fs.mkdirSync(staging);
       fs.writeFileSync(path.join(staging, 'largefile.txt'), 'a'.repeat(2 * 1024 * 1024)); // 2MB
 
-      expect(cacheManager.getCacheStats().totalRepositories).toBe(0);
+      expect((await cacheManager.getCacheStats()).totalRepositories).toBe(0);
 
       const result = await cacheManager.enforceLimits();
       expect(result.removedRepos).toHaveLength(0);

@@ -203,8 +203,8 @@ describe.runIf(shouldRunNetworkTests)('Hybrid Cache Integration Tests', () => {
   });
 
   describe('Cache manager integration', () => {
-    it('should track cache statistics', () => {
-      const stats = cacheManager.getCacheStats();
+    it('should track cache statistics', async () => {
+      const stats = await cacheManager.getCacheStats();
 
       expect(stats.totalRepositories).toBeGreaterThanOrEqual(1);
       expect(Array.isArray(stats.repositories)).toBe(true);

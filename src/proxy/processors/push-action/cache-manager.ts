@@ -36,6 +36,7 @@ export class CacheManager {
   private mutex: Promise<void> = Promise.resolve();
   private repoLocks = new Map<string, Promise<void>>();
   private activeRepos = new Map<string, number>();
+  private sizes = new Map<string, number>();
 
   constructor(
     repoCacheDir: string = './.remote/cache',
@@ -105,22 +106,28 @@ export class CacheManager {
   }
 
   /**
-   * Update access time for repository (for LRU purposes)
+   * Mark a repository as just used: bump its mtime for LRU and re-measure its size
    */
   async touchRepository(repoName: string): Promise<void> {
-    return this.acquireLock(() => {
-      const repoPath = path.join(this.repoCacheDir, repoName);
-      if (fs.existsSync(repoPath)) {
-        const now = new Date();
-        fs.utimesSync(repoPath, now, now);
-      }
+    const repoPath = path.join(this.repoCacheDir, repoName);
+    if (!fs.existsSync(repoPath)) {
+      return;
+    }
+
+    const sizeBytes = await this.getDirectorySize(repoPath);
+    return this.acquireLock(async () => {
+      const now = new Date();
+      await fs.promises.utimes(repoPath, now, now);
+      this.sizes.set(repoName, sizeBytes);
     });
   }
 
   /**
    * Get cache statistics
+   *
+   * Sizes are measured once per repository and then only refreshed by touchRepository().
    */
-  getCacheStats(): CacheStats {
+  async getCacheStats(): Promise<CacheStats> {
     if (!fs.existsSync(this.repoCacheDir)) {
       return {
         totalRepositories: 0,
@@ -132,14 +139,18 @@ export class CacheManager {
     const repositories: Array<{ name: string; sizeBytes: number; lastAccessed: Date }> = [];
     let totalSizeBytes = 0;
 
-    const entries = fs.readdirSync(this.repoCacheDir, { withFileTypes: true });
+    const entries = await fs.promises.readdir(this.repoCacheDir, { withFileTypes: true });
 
     for (const entry of entries) {
       // Dot-prefixed folders are staging clones still being built, not cached repos
       if (entry.isDirectory() && !entry.name.startsWith('.')) {
         const repoPath = path.join(this.repoCacheDir, entry.name);
-        const sizeBytes = this.getDirectorySize(repoPath);
-        const stats = fs.statSync(repoPath);
+        let sizeBytes = this.sizes.get(entry.name);
+        if (sizeBytes === undefined) {
+          sizeBytes = await this.getDirectorySize(repoPath);
+          this.sizes.set(entry.name, sizeBytes);
+        }
+        const stats = await fs.promises.stat(repoPath);
 
         repositories.push({
           name: entry.name,
@@ -168,8 +179,8 @@ export class CacheManager {
   async enforceLimits(
     protectedRepos: string[] = [],
   ): Promise<{ removedRepos: string[]; freedBytes: number; remainingBytes: number }> {
-    return this.acquireLock(() => {
-      const stats = this.getCacheStats();
+    return this.acquireLock(async () => {
+      const stats = await this.getCacheStats();
       const removedRepos: string[] = [];
       let freedBytes = 0;
 
@@ -192,7 +203,7 @@ export class CacheManager {
           stats.totalRepositories - removedRepos.length > this.maxRepositories; // Over count limit
 
         if (shouldRemove) {
-          this.removeRepository(repo.name);
+          await this.removeRepository(repo.name);
           removedRepos.push(repo.name);
           freedBytes += repo.sizeBytes;
           currentSizeBytes -= repo.sizeBytes;
@@ -208,30 +219,28 @@ export class CacheManager {
   /**
    * Remove specific repository from cache
    */
-  private removeRepository(repoName: string): void {
-    const repoPath = path.join(this.repoCacheDir, repoName);
-    if (fs.existsSync(repoPath)) {
-      fs.rmSync(repoPath, { recursive: true, force: true });
-    }
+  private async removeRepository(repoName: string): Promise<void> {
+    await fs.promises.rm(path.join(this.repoCacheDir, repoName), { recursive: true, force: true });
+    this.sizes.delete(repoName);
   }
 
   /**
    * Calculate directory size in bytes
    */
-  private getDirectorySize(dirPath: string): number {
+  private async getDirectorySize(dirPath: string): Promise<number> {
     let totalBytes = 0;
 
-    const calculateSize = (currentPath: string) => {
-      const items = fs.readdirSync(currentPath, { withFileTypes: true });
+    const calculateSize = async (currentPath: string) => {
+      const items = await fs.promises.readdir(currentPath, { withFileTypes: true });
 
       for (const item of items) {
         const itemPath = path.join(currentPath, item.name);
 
         if (item.isDirectory()) {
-          calculateSize(itemPath);
+          await calculateSize(itemPath);
         } else {
           try {
-            const stats = fs.statSync(itemPath);
+            const stats = await fs.promises.stat(itemPath);
             totalBytes += stats.size;
           } catch (error) {
             console.warn(`[CacheManager] Failed to stat file ${itemPath}:`, error);
@@ -241,7 +250,7 @@ export class CacheManager {
     };
 
     try {
-      calculateSize(dirPath);
+      await calculateSize(dirPath);
     } catch (error) {
       console.warn(`[CacheManager] Failed to calculate size for ${dirPath}:`, error);
       return 0;

@@ -72,7 +72,7 @@ HTTPS credentials are never put on the command line or in a URL. [`git-operation
 
 ## Eviction
 
-After each cached pull, `enforceLimits()` removes the least recently used mirrors (by the folder's mtime, which `touchRepository()` updates) until both limits are respected. The mirror the current push just used is always kept: a repository larger than `maxSizeGB` therefore stays cached and a warning is logged on the push; it is evicted once another repository becomes more recent.
+After each cached pull, `enforceLimits()` removes the least recently used mirrors (by the folder's mtime, which `touchRepository()` updates) until both limits are respected. Mirror sizes are kept in memory: each push only re-measures the mirror it updated. The mirror the current push just used is always kept: a repository larger than `maxSizeGB` therefore stays cached and a warning is logged on the push; it is evicted once another repository becomes more recent.
 
 ## Performance
 
