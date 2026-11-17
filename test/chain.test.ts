@@ -600,15 +600,17 @@ describe('proxy chain', function () {
     expect(tagChain).toEqual(chain.tagPushChain);
   });
 
-  it('tagPushChain runs checkHiddenCommits after writePack', async () => {
+  it('tagPushChain runs checkHiddenCommits after writePack and before checkIfWaitingAuth', async () => {
     await chain.getChain({ type: RequestType.PUSH, actionType: PushType.TAG });
 
     const tagChain = chain.tagPushChain as unknown[];
     const writePackIdx = tagChain.indexOf(mockPushProcessors.writePack);
     const hiddenIdx = tagChain.indexOf(mockPushProcessors.checkHiddenCommits);
+    const waitingAuthIdx = tagChain.indexOf(mockPushProcessors.checkIfWaitingAuth);
 
     expect(writePackIdx).toBeGreaterThanOrEqual(0);
     expect(hiddenIdx).toBeGreaterThan(writePackIdx);
+    expect(waitingAuthIdx).toBeGreaterThan(hiddenIdx);
     expect(tagChain).toContain(mockPushProcessors.checkHiddenCommits);
     expect(tagChain).not.toContain(mockPushProcessors.getDiff);
     expect(tagChain).not.toContain(mockPushProcessors.gitleaks);
@@ -674,6 +676,7 @@ describe('proxy chain', function () {
 
     expect(mockPushProcessors.writePack).toHaveBeenCalled();
     expect(mockPushProcessors.checkHiddenCommits).toHaveBeenCalled();
+    expect(mockPushProcessors.checkIfWaitingAuth).not.toHaveBeenCalled();
     expect(mockPushProcessors.preReceive).not.toHaveBeenCalled();
     expect(mockPushProcessors.blockForAuth).not.toHaveBeenCalled();
     expect(mockPostProcessors.audit).toHaveBeenCalled();
