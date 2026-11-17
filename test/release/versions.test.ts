@@ -22,6 +22,13 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 const repoRoot = path.join(__dirname, '..', '..');
 const script = path.join(repoRoot, 'scripts', 'release', 'versions.mjs');
+const patchLockfile = path.join(
+  repoRoot,
+  '.github',
+  'actions',
+  'bump-versions',
+  'patch-lockfile-version.js',
+);
 const CLI_PATH = 'packages/git-proxy-cli';
 const ROOT_NAME = '@finos/git-proxy';
 
@@ -111,66 +118,52 @@ describe('scripts/release/versions.mjs', () => {
     });
   });
 
-  describe('bump', () => {
-    it('bumps a release branch to the next patch and passes the publish guard', () => {
+  describe('after a bump by .github/actions/bump-versions', () => {
+    // The action sets the manifest fields with `npm pkg set` and then patches
+    // the lockfile with patch-lockfile-version.js. The manifest edits are
+    // mirrored here so the test doesn't shell out to npm (npm.cmd on Windows).
+    const bumpLikeTheAction = (version: string) => {
+      const rootPkg = readJson(files().root);
+      const cliPkg = readJson(files().cli);
+      rootPkg.version = version;
+      cliPkg.version = version;
+      cliPkg.dependencies[ROOT_NAME] = version;
+      fs.writeFileSync(files().root, JSON.stringify(rootPkg, null, 2) + '\n');
+      fs.writeFileSync(files().cli, JSON.stringify(cliPkg, null, 2) + '\n');
+
+      return spawnSync(process.execPath, [patchLockfile], {
+        cwd: dir,
+        encoding: 'utf8',
+        env: { ...process.env, VERSION: version },
+      });
+    };
+
+    it('passes the publish guard after a patch bump on a release branch', () => {
       writeFixture({ root: '2.2.0' });
       const lockBefore = readJson(files().lock);
 
-      const result = run('bump', '2.2.1', dir);
+      const result = bumpLikeTheAction('2.2.1');
       expect(result.stderr).toBe('');
       expect(result.status).toBe(0);
 
-      const rootPkg = readJson(files().root);
-      const cliPkg = readJson(files().cli);
-      const lock = readJson(files().lock);
-      expect(rootPkg.version).toBe('2.2.1');
-      expect(cliPkg.version).toBe('2.2.1');
-      expect(cliPkg.dependencies[ROOT_NAME]).toBe('2.2.1');
-      expect(lock.version).toBe('2.2.1');
-      expect(lock.packages[''].version).toBe('2.2.1');
-      expect(lock.packages[CLI_PATH].version).toBe('2.2.1');
-      expect(lock.packages[CLI_PATH].dependencies[ROOT_NAME]).toBe('2.2.1');
-
+      // Only the four version fields move in the lockfile
       lockBefore.version = '2.2.1';
       lockBefore.packages[''].version = '2.2.1';
       lockBefore.packages[CLI_PATH].version = '2.2.1';
       lockBefore.packages[CLI_PATH].dependencies[ROOT_NAME] = '2.2.1';
-      expect(lock).toEqual(lockBefore);
+      expect(readJson(files().lock)).toEqual(lockBefore);
+
+      const guard = run('check', dir);
+      expect(guard.stderr).toBe('');
+      expect(guard.status).toBe(0);
+    });
+
+    it('passes the publish guard after a minor bump on main', () => {
+      writeFixture({ root: '2.3.0' });
+
+      expect(bumpLikeTheAction('2.4.0').status).toBe(0);
 
       expect(run('check', dir).status).toBe(0);
-    });
-
-    it('leaves files byte-for-byte unchanged when bumping to the current version', () => {
-      writeFixture({ root: '2.2.0' });
-      const before = Object.values(files()).map((file) => fs.readFileSync(file, 'utf8'));
-
-      expect(run('bump', '2.2.0', dir).status).toBe(0);
-
-      const after = Object.values(files()).map((file) => fs.readFileSync(file, 'utf8'));
-      expect(after).toEqual(before);
-    });
-
-    it('rejects a version that is not semver', () => {
-      writeFixture({ root: '2.2.0' });
-
-      const result = run('bump', 'v2.2.1', dir);
-
-      expect(result.status).toBe(1);
-      expect(result.stderr).toContain("'v2.2.1' isn't a plain semver version");
-      expect(readJson(files().root).version).toBe('2.2.0');
-    });
-
-    it('refuses to bump when the CLI no longer pins the root package', () => {
-      writeFixture({ root: '2.2.0' });
-      const cliPkg = readJson(files().cli);
-      delete cliPkg.dependencies[ROOT_NAME];
-      fs.writeFileSync(files().cli, JSON.stringify(cliPkg, null, 2) + '\n');
-
-      const result = run('bump', '2.2.1', dir);
-
-      expect(result.status).toBe(1);
-      expect(result.stderr).toContain(`no longer depends on ${ROOT_NAME}`);
-      expect(readJson(files().root).version).toBe('2.2.0');
     });
   });
 
@@ -183,7 +176,7 @@ describe('scripts/release/versions.mjs', () => {
       ['a new major', '3.0.0', '2.3.0', 'latest'],
       ['a version that only sorts higher numerically', '2.10.0', '2.9.3', 'latest'],
       ['a first publish', '2.3.0', '0.0.0', 'latest'],
-      ['a version that is already latest', '2.3.0', '2.3.0', 'release-2.3'],
+      ['a re-run after the root package became latest', '2.3.0', '2.3.0', 'latest'],
       ['a release candidate', '2.4.0-rc.1', '2.3.0', 'rc'],
       ['a release candidate on an older line', '2.1.0-rc.1', '2.3.0', 'rc'],
     ])('tags %s (%s with latest %s) as %s', (_label, version, latest, tag) => {
