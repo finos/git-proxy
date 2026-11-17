@@ -19,17 +19,19 @@ In `proxy.config.json`:
     "enabled": true,
     "maxSizeGB": 2,
     "maxRepositories": 50,
-    "cacheDir": "./.remote/cache"
+    "cacheDir": "./.remote/cache",
+    "gitTimeoutSeconds": 600
   }
 }
 ```
 
-| Option            | Default           | Meaning                                         |
-| ----------------- | ----------------- | ----------------------------------------------- |
-| `enabled`         | `false`           | Use the cached pull implementations             |
-| `maxSizeGB`       | `2`               | Total size above which LRU eviction kicks in    |
-| `maxRepositories` | `50`              | Number of mirrors above which eviction kicks in |
-| `cacheDir`        | `./.remote/cache` | Where the bare mirrors live                     |
+| Option              | Default           | Meaning                                         |
+| ------------------- | ----------------- | ----------------------------------------------- |
+| `enabled`           | `false`           | Use the cached pull implementations             |
+| `maxSizeGB`         | `2`               | Total size above which LRU eviction kicks in    |
+| `maxRepositories`   | `50`              | Number of mirrors above which eviction kicks in |
+| `cacheDir`          | `./.remote/cache` | Where the bare mirrors live                     |
+| `gitTimeoutSeconds` | `600`             | Kill a git command and fail the push after this |
 
 ## How a cached pull works
 
@@ -59,7 +61,7 @@ The global `CacheManager` mutex additionally serialises `touchRepository()` and 
 
 > The locks are in-process. Several GitProxy instances must not share the same `cacheDir`.
 
-All git commands are run with an asynchronous `spawn`, so a long clone never blocks the event loop.
+All git commands are run with an asynchronous `spawn`, so a long clone never blocks the event loop. Each command is killed after `cache.gitTimeoutSeconds`, so a hung fetch fails its push and releases the lock instead of blocking every later push to that repository.
 
 ## Credentials
 

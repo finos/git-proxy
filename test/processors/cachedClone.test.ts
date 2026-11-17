@@ -232,6 +232,22 @@ describe('performCachedClone', () => {
     expect(cacheManager.getConfig().repoCacheDir).toBe(cacheDir);
   });
 
+  it('fails the push once git exceeds cache.gitTimeoutSeconds, releasing the lock', async () => {
+    const getConfig = vi
+      .spyOn(cacheManager, 'getConfig')
+      .mockReturnValue({ ...cacheManager.getConfig(), gitTimeoutSeconds: 0.001 });
+
+    await expect(
+      performCachedClone(newPush(), new Step('pullRemote'), { url: remote }, 'basic'),
+    ).rejects.toThrow('git clone timed out after 1ms');
+
+    // The next push to the same repository is not blocked
+    getConfig.mockRestore();
+    const action = newPush();
+    await performCachedClone(action, new Step('pullRemote'), { url: remote }, 'basic');
+    expect(fs.existsSync(path.join(workCopyOf(action), 'first.txt'))).toBe(true);
+  });
+
   describe('when a mirror alone exceeds maxSizeGB', () => {
     let originalMax: number;
 

@@ -449,6 +449,10 @@
         "cacheDir": {
           "type": "string",
           "description": "Directory path for bare repository cache (default ./.remote/cache)"
+        },
+        "gitTimeoutSeconds": {
+          "type": "number",
+          "description": "Maximum time in seconds a single git command of a cached pull may run before it is killed and the push fails (default 600)."
         }
       },
       "required": ["maxSizeGB", "maxRepositories", "cacheDir"],

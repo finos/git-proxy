@@ -396,6 +396,11 @@ export interface Cache {
    */
   enabled?: boolean;
   /**
+   * Maximum time in seconds a single git command of a cached pull may run before it is
+   * killed and the push fails (default 600).
+   */
+  gitTimeoutSeconds?: number;
+  /**
    * Maximum number of repositories in cache (default 50)
    */
   maxRepositories: number;
@@ -1252,6 +1257,7 @@ const typeMap: any = {
     [
       { json: 'cacheDir', js: 'cacheDir', typ: '' },
       { json: 'enabled', js: 'enabled', typ: u(undefined, true) },
+      { json: 'gitTimeoutSeconds', js: 'gitTimeoutSeconds', typ: u(undefined, 3.14) },
       { json: 'maxRepositories', js: 'maxRepositories', typ: 3.14 },
       { json: 'maxSizeGB', js: 'maxSizeGB', typ: 3.14 },
     ],

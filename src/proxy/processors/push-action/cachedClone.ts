@@ -49,7 +49,8 @@ export async function performCachedClone(
   strategy: Action['pullAuthStrategy'],
 ): Promise<CloneResult> {
   const timer = new PerformanceTimer(step);
-  const { repoCacheDir } = cacheManager.getConfig();
+  const { repoCacheDir, gitTimeoutSeconds } = cacheManager.getConfig();
+  const timeoutMs = gitTimeoutSeconds * 1000;
   const cacheKey = cacheKeyFor(action);
   const bareRepo = path.join(repoCacheDir, cacheKey);
   const workCopy = path.join(action.proxyGitPath!, action.repoName);
@@ -73,6 +74,7 @@ export async function performCachedClone(
           password: access.password,
           env: access.env,
           prune: true,
+          timeoutMs,
         });
         timer.mark('Bare mirror fetched');
       } catch (fetchError) {
@@ -80,18 +82,18 @@ export async function performCachedClone(
         // so try rebuilding it. If the rebuild fails too (e.g. bad credentials)
         // the existing mirror is left untouched for other users.
         step.log(`Fetch failed, rebuilding bare mirror: ${fetchError}`);
-        await buildBare(bareRepo, access);
+        await buildBare(bareRepo, access, timeoutMs);
         timer.mark('Bare mirror rebuilt');
       }
     } else {
-      await buildBare(bareRepo, access);
+      await buildBare(bareRepo, access, timeoutMs);
       timer.mark('Bare mirror created');
     }
 
     await cacheManager.touchRepository(cacheKey);
 
     // Phase 2
-    await gitOps.cloneLocal({ sourceDir: bareRepo, targetDir: workCopy });
+    await gitOps.cloneLocal({ sourceDir: bareRepo, targetDir: workCopy, timeoutMs });
     timer.mark('Working copy created');
     timer.end();
 
@@ -162,8 +164,9 @@ function hostOf(url: string): string {
  *
  * @param bareRepo Destination path inside the cache
  * @param access How to reach the remote
+ * @param timeoutMs Kill git and fail once this many milliseconds have passed
  */
-async function buildBare(bareRepo: string, access: RemoteAccess): Promise<void> {
+async function buildBare(bareRepo: string, access: RemoteAccess, timeoutMs: number): Promise<void> {
   // Dot-prefixed so getCacheStats() and eviction ignore it while it is built
   const staging = path.join(
     path.dirname(bareRepo),
@@ -178,6 +181,7 @@ async function buildBare(bareRepo: string, access: RemoteAccess): Promise<void> 
       password: access.password,
       env: access.env,
       bare: true,
+      timeoutMs,
     });
     await fs.promises.rm(bareRepo, { recursive: true, force: true });
     await fs.promises.rename(staging, bareRepo);

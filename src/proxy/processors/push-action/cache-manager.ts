@@ -32,6 +32,7 @@ export class CacheManager {
   private repoCacheDir: string;
   private maxSizeGB: number;
   private maxRepositories: number;
+  private gitTimeoutSeconds: number;
   private mutex: Promise<void> = Promise.resolve();
   private repoLocks = new Map<string, Promise<void>>();
   private activeRepos = new Map<string, number>();
@@ -40,10 +41,12 @@ export class CacheManager {
     repoCacheDir: string = './.remote/cache',
     maxSizeGB: number = 2,
     maxRepositories: number = 50,
+    gitTimeoutSeconds: number = 600,
   ) {
     this.repoCacheDir = repoCacheDir;
     this.maxSizeGB = maxSizeGB;
     this.maxRepositories = maxRepositories;
+    this.gitTimeoutSeconds = gitTimeoutSeconds;
   }
 
   /**
@@ -255,6 +258,7 @@ export class CacheManager {
       maxSizeGB: this.maxSizeGB,
       maxRepositories: this.maxRepositories,
       repoCacheDir: this.repoCacheDir,
+      gitTimeoutSeconds: this.gitTimeoutSeconds,
     };
   }
 }
@@ -265,4 +269,5 @@ export const cacheManager = new CacheManager(
   config?.cacheDir,
   config?.maxSizeGB,
   config?.maxRepositories,
+  config?.gitTimeoutSeconds,
 );

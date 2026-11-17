@@ -206,6 +206,19 @@ describe('git-operations', () => {
       ]);
     });
 
+    it('kills a hung git and rejects once the timeout expires', async () => {
+      // Simulates a hung git
+      const proc = new EventEmitter() as any;
+      proc.stderr = new EventEmitter();
+      proc.kill = vi.fn();
+      spawnMock.mockImplementationOnce((() => proc) as any);
+
+      await expect(
+        gitOps.fetch({ dir: '/tmp/m.git', url: 'https://github.com/a/b.git', timeoutMs: 20 }),
+      ).rejects.toThrow('git fetch timed out after 20ms');
+      expect(proc.kill).toHaveBeenCalledWith('SIGTERM');
+    });
+
     it('reports a generic error when git prints nothing', async () => {
       spawnMock.mockImplementationOnce(fakeGit({ code: 1 }));
 

@@ -78,25 +78,43 @@ function httpOrigin(url: string): string | null {
   }
 }
 
+export const GIT_TIMEOUT_MS = 10 * 60 * 1000;
+
 /**
  * Run a git command without blocking the event loop.
  *
  * @param args Arguments passed to git
  * @param env Extra environment variables for the child process
+ * @param timeoutMs Kill git and reject once this many milliseconds have passed
  * @return Exit code and captured stderr
  */
 function runGit(
   args: string[],
   env?: NodeJS.ProcessEnv,
+  timeoutMs: number = GIT_TIMEOUT_MS,
 ): Promise<{ status: number; stderr: string }> {
   return new Promise((resolve, reject) => {
     const proc = spawn('git', args, { stdio: ['ignore', 'ignore', 'pipe'], env: buildEnv(env) });
     let stderr = '';
+
+    const timer = setTimeout(() => {
+      proc.kill('SIGTERM');
+      reject(
+        new Error(`git ${args[0] === '-C' ? args[2] : args[0]} timed out after ${timeoutMs}ms`),
+      );
+    }, timeoutMs);
+
     proc.stderr.on('data', (chunk) => {
       stderr += chunk.toString();
     });
-    proc.on('error', reject);
-    proc.on('close', (code) => resolve({ status: code ?? 1, stderr }));
+    proc.on('error', (error) => {
+      clearTimeout(timer);
+      reject(error);
+    });
+    proc.on('close', (code) => {
+      clearTimeout(timer);
+      resolve({ status: code ?? 1, stderr });
+    });
   });
 }
 
@@ -106,6 +124,7 @@ interface RemoteOptions {
   username?: string;
   password?: string;
   env?: NodeJS.ProcessEnv;
+  timeoutMs?: number;
 }
 
 interface CloneOptions extends RemoteOptions {
@@ -120,7 +139,7 @@ interface FetchOptions extends RemoteOptions {
  * Clone a repository using native git
  */
 export async function clone(options: CloneOptions): Promise<void> {
-  const { dir, url, username, password, bare = false, env } = options;
+  const { dir, url, username, password, bare = false, env, timeoutMs } = options;
 
   const args: string[] = ['clone'];
 
@@ -132,7 +151,11 @@ export async function clone(options: CloneOptions): Promise<void> {
   // can never be interpreted as an option
   args.push('--', url, dir);
 
-  const result = await runGit(args, { ...buildAuthEnv(url, username, password), ...env });
+  const result = await runGit(
+    args,
+    { ...buildAuthEnv(url, username, password), ...env },
+    timeoutMs,
+  );
   if (result.status !== 0) {
     throw new Error(`Git clone failed: ${result.stderr || 'Unknown error'}`);
   }
@@ -142,7 +165,7 @@ export async function clone(options: CloneOptions): Promise<void> {
  * Fetch updates in a repository using native git
  */
 export async function fetch(options: FetchOptions): Promise<void> {
-  const { dir, url, username, password, prune = false, env } = options;
+  const { dir, url, username, password, prune = false, env, timeoutMs } = options;
 
   const args: string[] = ['-C', dir, 'fetch'];
 
@@ -153,7 +176,11 @@ export async function fetch(options: FetchOptions): Promise<void> {
   // Mirror every branch and tag; --prune drops the ones deleted upstream
   args.push('--', url, '+refs/heads/*:refs/heads/*', '+refs/tags/*:refs/tags/*');
 
-  const result = await runGit(args, { ...buildAuthEnv(url, username, password), ...env });
+  const result = await runGit(
+    args,
+    { ...buildAuthEnv(url, username, password), ...env },
+    timeoutMs,
+  );
   if (result.status !== 0) {
     throw new Error(`Git fetch failed: ${result.stderr || 'Unknown error'}`);
   }
@@ -162,10 +189,14 @@ export async function fetch(options: FetchOptions): Promise<void> {
 /**
  * Clone from local repository (for working copy from bare cache)
  */
-export async function cloneLocal(options: { sourceDir: string; targetDir: string }): Promise<void> {
-  const { sourceDir, targetDir } = options;
+export async function cloneLocal(options: {
+  sourceDir: string;
+  targetDir: string;
+  timeoutMs?: number;
+}): Promise<void> {
+  const { sourceDir, targetDir, timeoutMs } = options;
 
-  const result = await runGit(['clone', '--', sourceDir, targetDir]);
+  const result = await runGit(['clone', '--', sourceDir, targetDir], undefined, timeoutMs);
   if (result.status !== 0) {
     throw new Error(`Git local clone failed: ${result.stderr || 'Unknown error'}`);
   }
