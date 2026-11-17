@@ -22,6 +22,7 @@ import { Action } from '../../src/proxy/actions/Action';
 import { cacheManager } from '../../src/proxy/processors/push-action/cache-manager';
 import * as config from '../../src/config';
 import { PullRemoteBase } from '../../src/proxy/processors/push-action/PullRemoteBase';
+import { cacheKeyFor } from '../../src/proxy/processors/push-action/cachedClone';
 
 const checkoutPath = (actionId: string) => `./.remote/${PullRemoteBase.checkoutDirName(actionId)}`;
 
@@ -31,6 +32,7 @@ const shouldRunNetworkTests = process.env.RUN_NETWORK_TESTS === 'true';
 
 describe.runIf(shouldRunNetworkTests)('Hybrid Cache Integration Tests', () => {
   const testRepoUrl = 'https://github.com/finos/git-proxy.git';
+  const cacheKey = cacheKeyFor(new Action('key', 'push', 'POST', Date.now(), testRepoUrl));
   const authorization = `Basic ${Buffer.from('test:test').toString('base64')}`;
 
   // Shared test data populated by before() hook
@@ -47,7 +49,7 @@ describe.runIf(shouldRunNetworkTests)('Hybrid Cache Integration Tests', () => {
     cacheHitAction: null,
     cacheMissDuration: 0,
     cacheHitDuration: 0,
-    bareRepoPath: './.remote/cache/github.com__finos__git-proxy.git',
+    bareRepoPath: `./.remote/cache/${cacheKey}`,
     inodeBefore: null,
     inodeAfter: null,
   };
@@ -210,9 +212,7 @@ describe.runIf(shouldRunNetworkTests)('Hybrid Cache Integration Tests', () => {
       expect(Array.isArray(stats.repositories)).toBe(true);
       expect(stats.repositories.length).toBeGreaterThanOrEqual(1);
 
-      const gitProxyRepo = stats.repositories.find(
-        (r) => r.name === 'github.com__finos__git-proxy.git',
-      );
+      const gitProxyRepo = stats.repositories.find((r) => r.name === cacheKey);
       expect(gitProxyRepo).toBeDefined();
       expect(gitProxyRepo.sizeBytes).toBeGreaterThan(0);
       expect(gitProxyRepo.lastAccessed).toBeInstanceOf(Date);

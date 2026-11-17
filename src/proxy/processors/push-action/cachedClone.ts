@@ -138,11 +138,10 @@ export async function performCachedClone(
  * @return A filesystem-safe, collision-free cache directory name
  */
 export function cacheKeyFor(action: Action): string {
-  const sanitise = (value: string) => value.replace(/[^\w.-]+/g, '-');
-  return [hostOf(action.url), action.project, action.repoName]
-    .filter(Boolean)
-    .map(sanitise)
-    .join('__');
+  const parts = [hostOf(action.url), action.project, action.repoName].filter(Boolean);
+  const readable = parts.map((value) => value.replace(/[^\w.-]+/g, '-')).join('__');
+  const hash = crypto.createHash('sha256').update(JSON.stringify(parts)).digest('hex');
+  return `${readable}-${hash.slice(0, 8)}`;
 }
 
 /**

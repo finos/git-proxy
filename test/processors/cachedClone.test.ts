@@ -79,20 +79,37 @@ describe('cacheKeyFor', () => {
   it('includes the host and project in the key', () => {
     const action = actionFor('https://github.com/finos/git-proxy.git');
 
-    expect(cacheKeyFor(action)).toBe('github.com__finos__git-proxy.git');
+    expect(cacheKeyFor(action)).toMatch(/^github\.com__finos__git-proxy\.git-[0-9a-f]{8}$/);
   });
 
   it('keeps the port of self-hosted remotes, sanitised', () => {
     const action = actionFor('https://git.internal:8443/team/app.git');
 
-    expect(cacheKeyFor(action)).toBe('git.internal-8443__team__app.git');
+    expect(cacheKeyFor(action)).toMatch(/^git\.internal-8443__team__app\.git-[0-9a-f]{8}$/);
   });
 
   it('falls back to host and repository name when there is no project', () => {
     const action = actionFor('https://github.com/finos/git-proxy.git');
     action.project = '';
 
-    expect(cacheKeyFor(action)).toBe('github.com__git-proxy.git');
+    expect(cacheKeyFor(action)).toMatch(/^github\.com__git-proxy\.git-[0-9a-f]{8}$/);
+  });
+
+  it('keeps paths apart that sanitise to the same name', () => {
+    const pairs = [
+      ['https://gitlab.com/a/b/c.git', 'https://gitlab.com/a-b/c.git'],
+      ['https://github.com/x__y/z.git', 'https://github.com/x/y__z.git'],
+    ];
+
+    for (const [one, two] of pairs) {
+      expect(cacheKeyFor(actionFor(one))).not.toBe(cacheKeyFor(actionFor(two)));
+    }
+  });
+
+  it('is stable for the same repository', () => {
+    const url = 'https://github.com/finos/git-proxy.git';
+
+    expect(cacheKeyFor(actionFor(url, 'a'))).toBe(cacheKeyFor(actionFor(url, 'b')));
   });
 
   it('produces a flat, filesystem-safe name', () => {
@@ -109,7 +126,7 @@ describe('performCachedClone', () => {
   const seed = path.join(testRoot, 'seed');
   const cacheDir = path.join(testRoot, 'cache');
   const repoUrl = 'https://example.com/acme/app.git';
-  const bareRepo = path.join(cacheDir, 'example.com__acme__app.git');
+  const bareRepo = path.join(cacheDir, cacheKeyFor(actionFor(repoUrl)));
 
   const git = (cwd: string, ...args: string[]) =>
     execFileSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', ...args], {
@@ -239,7 +256,7 @@ describe('performCachedClone', () => {
     for (const action of pushes) {
       expect(fs.existsSync(path.join(workCopyOf(action), 'first.txt'))).toBe(true);
     }
-    expect(fs.readdirSync(cacheDir)).toEqual(['example.com__acme__app.git']);
+    expect(fs.readdirSync(cacheDir)).toEqual([path.basename(bareRepo)]);
   });
 
   it('uses the mocked cache folder', () => {
@@ -301,7 +318,7 @@ describe('performCachedClone', () => {
       await performCachedClone(other, step, { url: remote }, 'basic');
 
       expect(fs.existsSync(bareRepo)).toBe(false);
-      expect(fs.existsSync(path.join(cacheDir, 'example.com__acme__other.git'))).toBe(true);
+      expect(fs.existsSync(path.join(cacheDir, cacheKeyFor(other)))).toBe(true);
       expect(step.logs.some((l) => l.includes('LRU evicted 1 bare repos'))).toBe(true);
     });
   });
