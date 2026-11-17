@@ -43,7 +43,10 @@ The mirror lives at `<cacheDir>/<host>__<project>__<repo>`, e.g. `github.com__fi
 
 - **Miss**: the remote is cloned with `git clone --bare` (full history, all branches and tags).
 - **Hit**: the mirror is updated with `git fetch --prune` of `refs/heads/*` and `refs/tags/*`.
-- **Fetch fails**: the mirror is rebuilt. If the rebuild also fails (for example because the client's credentials are wrong) the push fails and **the existing mirror is left untouched** for everyone else.
+- **Fetch fails, mirror readable**: the error came from the remote side (network, wrong credentials, no access, timeout), so the push fails and the mirror is kept. No re-clone is attempted.
+- **Fetch fails, mirror corrupted** (git can no longer read its refs): the mirror is rebuilt. If the rebuild also fails the push fails and **the existing mirror is left untouched**.
+
+Git commands on the mirror use `--git-dir`, so a broken mirror inside another repository (such as the GitProxy checkout around `./.remote/cache`) is never mistaken for that repository.
 
 Every clone into the cache is done in a dot-prefixed staging folder (`.staging-<key>-<uuid>`) and only moved into place once it succeeded, so a failed or interrupted clone never leaves a half-written mirror behind. Staging folders are ignored by the cache statistics and by eviction.
 

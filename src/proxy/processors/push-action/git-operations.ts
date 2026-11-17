@@ -100,7 +100,7 @@ function runGit(
     const timer = setTimeout(() => {
       proc.kill('SIGTERM');
       reject(
-        new Error(`git ${args[0] === '-C' ? args[2] : args[0]} timed out after ${timeoutMs}ms`),
+        new Error(`git ${args.find((a) => !a.startsWith('-'))} timed out after ${timeoutMs}ms`),
       );
     }, timeoutMs);
 
@@ -167,7 +167,8 @@ export async function clone(options: CloneOptions): Promise<void> {
 export async function fetch(options: FetchOptions): Promise<void> {
   const { dir, url, username, password, prune = false, env, timeoutMs } = options;
 
-  const args: string[] = ['-C', dir, 'fetch'];
+  // --git-dir never falls back to an enclosing repository
+  const args: string[] = [`--git-dir=${dir}`, 'fetch'];
 
   if (prune) {
     args.push('--prune');
@@ -200,4 +201,12 @@ export async function cloneLocal(options: {
   if (result.status !== 0) {
     throw new Error(`Git local clone failed: ${result.stderr || 'Unknown error'}`);
   }
+}
+
+/**
+ * Whether git can still read the repository's refs.
+ */
+export async function isReadableRepo(dir: string): Promise<boolean> {
+  const result = await runGit([`--git-dir=${dir}`, 'for-each-ref', '--count=1']);
+  return result.status === 0;
 }

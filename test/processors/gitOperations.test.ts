@@ -195,8 +195,7 @@ describe('git-operations', () => {
       await gitOps.fetch({ dir: '/tmp/m.git', url: 'https://github.com/a/b.git', prune: true });
 
       expect(lastCall().args).toEqual([
-        '-C',
-        '/tmp/m.git',
+        '--git-dir=/tmp/m.git',
         'fetch',
         '--prune',
         '--',
@@ -225,6 +224,42 @@ describe('git-operations', () => {
       await expect(
         gitOps.fetch({ dir: '/tmp/m.git', url: 'https://github.com/a/b.git' }),
       ).rejects.toThrow('Git fetch failed: Unknown error');
+    });
+  });
+
+  describe('isReadableRepo', () => {
+    const root = path.join(os.tmpdir(), `git-proxy-readable-${process.pid}`);
+    const repo = path.join(root, 'repo.git');
+
+    afterEach(() => fs.rmSync(root, { recursive: true, force: true }));
+
+    it('accepts a healthy, even empty, repository', async () => {
+      childProcess.execFileSync('git', ['init', '--bare', '-q', repo]);
+      expect(await gitOps.isReadableRepo(repo)).toBe(true);
+    });
+
+    it('rejects a repository whose refs cannot be read', async () => {
+      childProcess.execFileSync('git', ['init', '--bare', '-q', repo]);
+      fs.writeFileSync(path.join(repo, 'packed-refs'), 'garbage');
+      expect(await gitOps.isReadableRepo(repo)).toBe(false);
+    });
+
+    it('rejects a folder that is not a repository', async () => {
+      fs.mkdirSync(repo, { recursive: true });
+      expect(await gitOps.isReadableRepo(repo)).toBe(false);
+    });
+
+    it('never falls back to an enclosing repository', async () => {
+      // Like a corrupted mirror in ./.remote/cache inside the GitProxy checkout
+      childProcess.execFileSync('git', ['init', '-q', root]);
+      const nested = path.join(root, '.remote', 'cache', 'm.git');
+      childProcess.execFileSync('git', ['init', '--bare', '-q', nested]);
+      fs.writeFileSync(path.join(nested, 'HEAD'), 'garbage');
+
+      expect(await gitOps.isReadableRepo(nested)).toBe(false);
+      await expect(gitOps.fetch({ dir: nested, url: repo, prune: true })).rejects.toThrow(
+        /not a git repository/,
+      );
     });
   });
 

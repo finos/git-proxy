@@ -184,18 +184,19 @@ describe('performCachedClone', () => {
     expect(fs.existsSync(path.join(workCopyOf(action), 'second.txt'))).toBe(true);
   });
 
-  it('keeps the existing mirror when both fetch and rebuild fail', async () => {
+  const unreachable = () => ({ url: path.join(testRoot, 'missing.git') });
+
+  it('fails without re-cloning when the remote cannot be reached', async () => {
     await performCachedClone(newPush(), new Step('pullRemote'), { url: remote }, 'basic');
     const inodeBefore = fs.statSync(bareRepo).ino;
 
-    // Same failure mode as a user with wrong credentials or no access
-    const unreachable = { url: path.join(testRoot, 'missing.git') };
-    await expect(
-      performCachedClone(newPush(), new Step('pullRemote'), unreachable, 'basic'),
-    ).rejects.toThrow(/Git clone failed/);
+    const step = new Step('pullRemote');
+    await expect(performCachedClone(newPush(), step, unreachable(), 'basic')).rejects.toThrow(
+      /Git fetch failed/,
+    );
 
+    expect(step.logs.some((l) => l.includes('rebuilding'))).toBe(false);
     expect(fs.statSync(bareRepo).ino).toBe(inodeBefore);
-    expect(fs.existsSync(path.join(bareRepo, 'HEAD'))).toBe(true);
     expect(stagingLeftovers()).toEqual([]);
   });
 
@@ -208,8 +209,21 @@ describe('performCachedClone', () => {
     const action = newPush();
     await performCachedClone(action, step, { url: remote }, 'basic');
 
-    expect(step.logs.some((l) => l.includes('Fetch failed, rebuilding bare mirror'))).toBe(true);
+    expect(step.logs.some((l) => l.includes('corrupted bare mirror, rebuilding'))).toBe(true);
     expect(fs.existsSync(path.join(workCopyOf(action), 'first.txt'))).toBe(true);
+    expect(stagingLeftovers()).toEqual([]);
+  });
+
+  it('leaves a corrupted mirror in place when the rebuild fails too', async () => {
+    await performCachedClone(newPush(), new Step('pullRemote'), { url: remote }, 'basic');
+    fs.writeFileSync(path.join(bareRepo, 'packed-refs'), 'garbage');
+    const inodeBefore = fs.statSync(bareRepo).ino;
+
+    await expect(
+      performCachedClone(newPush(), new Step('pullRemote'), unreachable(), 'basic'),
+    ).rejects.toThrow(/Git clone failed/);
+
+    expect(fs.statSync(bareRepo).ino).toBe(inodeBefore);
     expect(stagingLeftovers()).toEqual([]);
   });
 

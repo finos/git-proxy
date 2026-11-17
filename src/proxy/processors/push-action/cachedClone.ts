@@ -78,10 +78,11 @@ export async function performCachedClone(
         });
         timer.mark('Bare mirror fetched');
       } catch (fetchError) {
-        // A corrupted or half-written mirror must not poison every later push,
-        // so try rebuilding it. If the rebuild fails too (e.g. bad credentials)
-        // the existing mirror is left untouched for other users.
-        step.log(`Fetch failed, rebuilding bare mirror: ${fetchError}`);
+        // Remote-side error (network, credentials): no re-clone
+        if (await gitOps.isReadableRepo(bareRepo)) {
+          throw fetchError;
+        }
+        step.log(`Fetch failed on a corrupted bare mirror, rebuilding it: ${fetchError}`);
         await buildBare(bareRepo, access, timeoutMs);
         timer.mark('Bare mirror rebuilt');
       }
