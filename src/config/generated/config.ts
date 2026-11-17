@@ -387,27 +387,27 @@ export interface AuthorisedRepo {
  */
 export interface Cache {
   /**
-   * Directory path for bare repository cache (default ./.remote/cache)
+   * Directory path for bare repository cache
    */
-  cacheDir: string;
+  cacheDir?: string;
   /**
-   * Enable the bare repository cache. When disabled, each push clones directly from the
-   * remote as usual.
+   * Enable the bare repository cache (recommended). When disabled, each push clones directly
+   * from the remote as usual.
    */
   enabled?: boolean;
   /**
    * Maximum time in seconds a single git command of a cached pull may run before it is
-   * killed and the push fails (default 600).
+   * killed and the push fails
    */
   gitTimeoutSeconds?: number;
   /**
-   * Maximum number of repositories in cache (default 50)
+   * Maximum number of repositories in cache
    */
-  maxRepositories: number;
+  maxRepositories?: number;
   /**
-   * Maximum cache size in gigabytes (default 2GB)
+   * Maximum cache size in gigabytes
    */
-  maxSizeGB: number;
+  maxSizeGB?: number;
 }
 
 /**
@@ -1255,11 +1255,11 @@ const typeMap: any = {
   ),
   Cache: o(
     [
-      { json: 'cacheDir', js: 'cacheDir', typ: '' },
+      { json: 'cacheDir', js: 'cacheDir', typ: u(undefined, '') },
       { json: 'enabled', js: 'enabled', typ: u(undefined, true) },
       { json: 'gitTimeoutSeconds', js: 'gitTimeoutSeconds', typ: u(undefined, 3.14) },
-      { json: 'maxRepositories', js: 'maxRepositories', typ: 3.14 },
-      { json: 'maxSizeGB', js: 'maxSizeGB', typ: 3.14 },
+      { json: 'maxRepositories', js: 'maxRepositories', typ: u(undefined, 3.14) },
+      { json: 'maxSizeGB', js: 'maxSizeGB', typ: u(undefined, 3.14) },
     ],
     false,
   ),

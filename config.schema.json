@@ -435,27 +435,30 @@
       "properties": {
         "enabled": {
           "type": "boolean",
-          "description": "Enable the bare repository cache. When disabled, each push clones directly from the remote as usual.",
+          "description": "Enable the bare repository cache (recommended). When disabled, each push clones directly from the remote as usual.",
           "default": false
         },
         "maxSizeGB": {
           "type": "number",
-          "description": "Maximum cache size in gigabytes (default 2GB)"
+          "description": "Maximum cache size in gigabytes",
+          "default": 2
         },
         "maxRepositories": {
           "type": "number",
-          "description": "Maximum number of repositories in cache (default 50)"
+          "description": "Maximum number of repositories in cache",
+          "default": 50
         },
         "cacheDir": {
           "type": "string",
-          "description": "Directory path for bare repository cache (default ./.remote/cache)"
+          "description": "Directory path for bare repository cache",
+          "default": "./.remote/cache"
         },
         "gitTimeoutSeconds": {
           "type": "number",
-          "description": "Maximum time in seconds a single git command of a cached pull may run before it is killed and the push fails (default 600)."
+          "description": "Maximum time in seconds a single git command of a cached pull may run before it is killed and the push fails",
+          "default": 600
         }
       },
-      "required": ["maxSizeGB", "maxRepositories", "cacheDir"],
       "additionalProperties": false
     },
     "ssh": {
