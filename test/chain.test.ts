@@ -729,6 +729,7 @@ describe('proxy chain', function () {
       actionType: PushType.TAG,
       continue: () => true,
       allowPush: false,
+      proxyGitPath: './.remote/test',
     };
     mockPreProcessors.parseAction.mockResolvedValue({ type: RequestType.PUSH });
     mockPreProcessors.parsePush.mockResolvedValue(continuingAction);
@@ -766,6 +767,7 @@ describe('proxy chain', function () {
       actionType: PushType.TAG,
       continue: () => true,
       allowPush: false,
+      proxyGitPath: './.remote/test',
     });
 
     mockPushProcessors.checkHiddenCommits.mockResolvedValue({
@@ -773,6 +775,7 @@ describe('proxy chain', function () {
       actionType: PushType.TAG,
       continue: () => false,
       allowPush: false,
+      proxyGitPath: './.remote/test',
       steps: [{ stepName: 'checkHiddenCommits', error: true }],
     });
 
