@@ -153,7 +153,7 @@ const canAddUser = async (repoId: string, user: string, action: string) => {
     }
   } catch (error: unknown) {
     const { message } = getServiceError(error, 'Failed to validate repo permissions');
-    throw new Error(message);
+    throw new Error(message, { cause: error });
   }
 };
 
@@ -229,7 +229,7 @@ const addUser = async (repoId: string, user: string, action: string): Promise<vo
     } catch (error: unknown) {
       const { message } = getServiceError(error, 'Failed to add user');
       console.log(message);
-      throw new Error(message);
+      throw new Error(message, { cause: error });
     }
   } else {
     console.log('Duplicate user can not be added');
@@ -246,7 +246,7 @@ const deleteUser = async (user: string, repoId: string, action: string): Promise
   } catch (error: unknown) {
     const { message } = getServiceError(error, 'Failed to remove user');
     console.log(message);
-    throw new Error(message);
+    throw new Error(message, { cause: error });
   }
 };
 
@@ -259,7 +259,7 @@ const deleteRepo = async (repoId: string): Promise<void> => {
   } catch (error: unknown) {
     const { message } = getServiceError(error, 'Failed to delete repository');
     console.log(message);
-    throw new Error(message);
+    throw new Error(message, { cause: error });
   }
 };
 

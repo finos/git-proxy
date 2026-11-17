@@ -44,7 +44,7 @@ export function parseGitRemoteUrl(raw: string): ParsedGitRemotePath | null {
   const input = raw.trim();
   if (!input) return null;
 
-  let pathPart: string | null = null;
+  let pathPart: string;
 
   try {
     const u = new URL(input);

@@ -85,6 +85,7 @@ const CodeActionButton = ({ cloneURL }: CodeActionButtonProps) => {
         variant='primary'
         size='small'
         leadingVisual={CodeIcon}
+        data-testid='code-clone-btn'
         className={`rounded-md font-semibold whitespace-nowrap ${codeButtonGreenClassName}`}
       >
         Code

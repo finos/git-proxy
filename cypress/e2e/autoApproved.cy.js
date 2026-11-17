@@ -69,6 +69,7 @@ describe('Auto-Approved Push Test', () => {
     cy.wait('@getPush');
 
     cy.contains('Auto-approved by system').should('be.visible');
+    cy.contains('Invalid DateTime').should('not.exist');
 
     cy.contains('approved this contribution').should('not.exist');
   });
