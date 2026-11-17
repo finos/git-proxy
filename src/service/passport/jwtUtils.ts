@@ -36,7 +36,7 @@ export async function getJwks(authorityUrl: string): Promise<JwkKey[]> {
     return jwks.keys;
   } catch (error: unknown) {
     handleErrorAndLog(error, 'Error fetching JWKS');
-    throw new Error('Failed to fetch JWKS');
+    throw new Error('Failed to fetch JWKS', { cause: error });
   }
 }
 

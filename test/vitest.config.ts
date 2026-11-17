@@ -22,6 +22,10 @@ const repoRoot = fileURLToPath(new URL('..', import.meta.url));
 
 export default defineConfig({
   root: repoRoot,
+  resolve: {
+    // allow plugins to import from source
+    alias: [{ find: /^@finos\/git-proxy\/(.*)$/, replacement: path.join(repoRoot, 'src/$1') }],
+  },
   test: {
     pool: 'forks',
     fileParallelism: false,
@@ -33,7 +37,6 @@ export default defineConfig({
       include: ['src/**/*.ts'],
       exclude: [
         'dist',
-        'experimental',
         'packages',
         'plugins',
         'scripts',

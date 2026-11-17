@@ -15,7 +15,6 @@
  */
 
 describe('Repo', () => {
-  let cookies;
   let repoName;
 
   before(() => {
@@ -81,16 +80,19 @@ describe('Repo', () => {
     it('Displays an error when adding an existing repo', () => {
       cy.get('[data-testid="repo-list-view"]').find('[data-testid="add-repo-button"]').click();
 
+      // Try to add the same repo that was created in the previous test
       cy.get('[role="dialog"]').within(() => {
-        cy.get('[data-testid="repo-project-input"]').type('finos');
-        cy.get('[data-testid="repo-name-input"]').type('git-proxy');
-        cy.get('[data-testid="repo-url-input"]').type('https://github.com/finos/git-proxy.git');
+        cy.get('[data-testid="repo-project-input"]').type('cypress-test');
+        cy.get('[data-testid="repo-name-input"]').type(repoName);
+        cy.get('[data-testid="repo-url-input"]').type(
+          `https://github.com/cypress-test/${repoName}.git`,
+        );
         cy.get('[data-testid="add-repo-submit"]').click();
       });
 
       cy.get('[data-testid="repo-error"]')
         .should('be.visible')
-        .and('contain.text', 'Repository https://github.com/finos/git-proxy.git already exists!');
+        .and('contain.text', 'already exists');
     });
   });
 
@@ -104,10 +106,10 @@ describe('Repo', () => {
       // Create a new repo
       cy.getCSRFToken().then((csrfToken) => {
         repoName = `${Date.now()}`;
-        const gitProxyUrl = Cypress.env('GIT_PROXY_URL') || 'http://localhost:8000';
+        const gitProxyUrl = Cypress.expose('GIT_PROXY_URL') || 'http://localhost:8000';
         cloneURL = `${gitProxyUrl}/github.com/cypress-test/${repoName}.git`;
 
-        const apiBaseUrl = Cypress.env('API_BASE_URL') || Cypress.config('baseUrl');
+        const apiBaseUrl = Cypress.expose('API_BASE_URL') || Cypress.config('baseUrl');
         cy.request({
           method: 'POST',
           url: `${apiBaseUrl}/api/v1/repo`,
@@ -117,7 +119,7 @@ describe('Repo', () => {
             url: `https://github.com/cypress-test/${repoName}.git`,
           },
           headers: {
-            cookie: cookies?.join('; ') || '',
+            cookie: '',
             'X-CSRF-TOKEN': csrfToken,
           },
         }).then((res) => {
@@ -157,9 +159,9 @@ describe('Repo', () => {
       cy.getCSRFToken().then((csrfToken) => {
         cy.request({
           method: 'DELETE',
-          url: `${Cypress.env('API_BASE_URL') || Cypress.config('baseUrl')}/api/v1/repo/${repoId}/delete`,
+          url: `${Cypress.expose('API_BASE_URL') || Cypress.config('baseUrl')}/api/v1/repo/${repoId}/delete`,
           headers: {
-            cookie: cookies?.join('; ') || '',
+            cookie: '',
             'X-CSRF-TOKEN': csrfToken,
           },
         });

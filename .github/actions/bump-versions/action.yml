@@ -24,7 +24,6 @@ runs:
 
     - name: Verify packages are in lockstep for publishing
       shell: bash
-      # Callers sparse-check-out scripts/release next to this action
       run: node "$GITHUB_ACTION_PATH/../../../scripts/release/versions.mjs" check
 
     - name: Guard against unexpected changes
