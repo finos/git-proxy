@@ -16,7 +16,7 @@
 
 // @ts-check
 import { fileURLToPath } from 'node:url';
-import { includeIgnoreFile } from '@eslint/compat';
+import { fixupPluginRules, includeIgnoreFile } from '@eslint/compat';
 import { defineConfig } from 'eslint/config';
 import globals from 'globals';
 import js from '@eslint/js';
@@ -131,11 +131,16 @@ export default defineConfig(
       // TODO: split website into separate linting
       'website/src/**/*.{js,jsx,mjs,cjs,ts,tsx}',
     ],
-    plugins: { react },
-    extends: [react.configs.flat.recommended],
-    languageOptions: { globals: { ...globals.browser, ...globals.commonjs } },
+    ...react.configs.flat.recommended,
+    // workaround for eslint-plugin-react 7.37.5 and ESLint 10 compatibility
+    plugins: { react: fixupPluginRules(react) },
+    languageOptions: {
+      ...react.configs.flat.recommended.languageOptions,
+      globals: { ...globals.browser, ...globals.commonjs },
+    },
     settings: { react: { version: 'detect' } },
     rules: {
+      ...react.configs.flat.recommended.rules,
       'react/jsx-uses-react': 'error',
       'react/jsx-uses-vars': 'error',
       'react/prop-types': 'off',

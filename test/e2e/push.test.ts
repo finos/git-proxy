@@ -789,7 +789,7 @@ describe('Git Proxy E2E - Repository Push Tests', () => {
               console.log('[TEST] SUCCESS: Final push succeeded (detected from output)');
             } else {
               console.log('[TEST] Final push output:', finalPushOutput);
-              throw new Error('Final push failed after approval');
+              throw new Error('Final push failed after approval', { cause: error });
             }
           }
 

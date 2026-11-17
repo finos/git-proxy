@@ -132,7 +132,7 @@ const getPluginConfig = async (): Promise<ConfigOptions> => {
 const exec = async (_req: Request, action: Action): Promise<Action> => {
   const step = new Step('gitleaks');
 
-  let config: ConfigOptions | undefined = undefined;
+  let config: ConfigOptions;
   try {
     config = await getPluginConfig();
   } catch (error: unknown) {

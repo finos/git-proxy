@@ -92,7 +92,7 @@ async function checkGitProxy(): Promise<void> {
     throw new Error(`Healthcheck returned HTTP ${response.status}`);
   } catch (error: any) {
     console.error(`Error reaching GitProxy at ${healthUrl}: ${error}`);
-    throw new Error(`GitProxy is not reachable at ${healthUrl}.\n${INFRA_HINT}`);
+    throw new Error(`GitProxy is not reachable at ${healthUrl}.\n${INFRA_HINT}`, { cause: error });
   }
 }
 
@@ -120,7 +120,7 @@ function checkGitServer(): void {
     console.log(`Git server is reachable at ${testConfig.gitServerUrl}`);
   } catch (error: any) {
     console.error(`Error reaching Git server at ${repoUrl}: ${error}`);
-    throw new Error(`Git server is not reachable at ${repoUrl}.\n${INFRA_HINT}`);
+    throw new Error(`Git server is not reachable at ${repoUrl}.\n${INFRA_HINT}`, { cause: error });
   }
 }
 

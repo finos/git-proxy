@@ -46,7 +46,7 @@
  * so we use absolute URLs constructed from Cypress.config('baseUrl').
  */
 function getApiBaseUrl() {
-  return Cypress.env('API_BASE_URL') || Cypress.config('baseUrl');
+  return Cypress.expose('API_BASE_URL') || Cypress.config('baseUrl');
 }
 
 /**
@@ -228,7 +228,7 @@ Cypress.Commands.add('getTestRepoId', () => {
         `GET ${url} returned non-array (${typeof res.body}): ${JSON.stringify(res.body).slice(0, 500)}`,
       );
     }
-    const gitServerTarget = Cypress.env('GIT_SERVER_TARGET') || 'git-server:8443';
+    const gitServerTarget = Cypress.expose('GIT_SERVER_TARGET') || 'git-server:8443';
     const repo = res.body.find(
       (r) => r.url === `https://${gitServerTarget}/test-owner/test-repo.git`,
     );
@@ -345,70 +345,33 @@ Cypress.Commands.add('deleteTestUser', (username) => {
  * with plain basic auth. Token names must be unique per user, so each call mints its own.
  */
 Cypress.Commands.add('mintUpstreamToken', (username, password) => {
-  const gitServerUrl = Cypress.env('GIT_SERVER_URL') || 'https://localhost:8443';
-  const name = `cypress-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-  const body = JSON.stringify({ name, scopes: ['write:repository', 'read:user'] });
-  // curl rather than cy.request: the test server's certificate is self-signed.
-  cy.exec(
-    `curl -sk -u '${username}:${password}' -H 'Content-Type: application/json' ` +
-      `-d '${body}' ${gitServerUrl}/api/v1/users/${username}/tokens`,
-    { timeout: 15000 },
-  ).then((result) => {
-    const token = JSON.parse(result.stdout).sha1;
-    if (!token) {
-      throw new Error(`Could not mint a token for ${username}: ${result.stdout}`);
-    }
-    return cy.wrap(token, { log: false });
-  });
+  // Cypress 16 removed cy.exec(); mint via a Node task so we can ignore the
+  // self-signed Forgejo certificate without shelling out to curl.
+  return cy
+    .task(
+      'mintUpstreamToken',
+      {
+        username,
+        password,
+        gitServerUrl: Cypress.expose('GIT_SERVER_URL') || 'https://localhost:8443',
+      },
+      { timeout: 15000, log: false },
+    )
+    .then((token) => cy.wrap(token, { log: false }));
 });
 
 Cypress.Commands.add('createPush', (gitUser, gitPassword, gitEmail, uniqueSuffix) => {
-  const proxyUrl = Cypress.env('GIT_PROXY_URL') || 'http://localhost:8000';
-  const gitServerTarget = Cypress.env('GIT_SERVER_TARGET') || 'git-server:8443';
-  const repoUrl = `${proxyUrl}/${gitServerTarget}/test-owner/test-repo.git`;
-  const cloneDir = `/tmp/cypress-push-${uniqueSuffix}`;
-
-  // Pass credentials via GIT_CONFIG_* env vars to avoid exposing them in command output
-  const gitCredentialEnv = {
-    GIT_TERMINAL_PROMPT: '0',
-    NODE_TLS_REJECT_UNAUTHORIZED: '0',
-    GIT_CONFIG_COUNT: '1',
-    GIT_CONFIG_KEY_0: `url.${proxyUrl.replace('://', `://${gitUser}:${gitPassword}@`)}.insteadOf`,
-    GIT_CONFIG_VALUE_0: proxyUrl,
-  };
-
-  cy.exec(`rm -rf ${cloneDir}`, { failOnNonZeroExit: false });
-  cy.exec(`git clone ${repoUrl} ${cloneDir}`, {
-    timeout: 30000,
-    env: gitCredentialEnv,
-  });
-  cy.exec(`git -C ${cloneDir} config user.name "${gitUser}"`);
-  cy.exec(`git -C ${cloneDir} config user.email "${gitEmail}"`);
-
-  // Pull any upstream changes to avoid conflicts from previous test runs
-  cy.exec(`git -C ${cloneDir} pull --rebase origin main`, {
-    failOnNonZeroExit: false,
-    timeout: 30000,
-    env: gitCredentialEnv,
-  });
-
-  const timestamp = Date.now();
-  cy.exec(
-    `echo "test-${uniqueSuffix}-${timestamp}" > ${cloneDir}/cypress-test-${uniqueSuffix}.txt`,
+  // Cypress 16 removed cy.exec(); the clone/commit/push sequence runs in Node.
+  return cy.task(
+    'createPush',
+    {
+      gitUser,
+      gitPassword,
+      gitEmail,
+      uniqueSuffix,
+      proxyUrl: Cypress.expose('GIT_PROXY_URL') || 'http://localhost:8000',
+      gitServerTarget: Cypress.expose('GIT_SERVER_TARGET') || 'git-server:8443',
+    },
+    { timeout: 120000 },
   );
-  cy.exec(`git -C ${cloneDir} add .`);
-  cy.exec(`git -C ${cloneDir} commit -m "cypress e2e test: ${uniqueSuffix}"`);
-  cy.exec(`git -C ${cloneDir} push origin main 2>&1`, {
-    failOnNonZeroExit: false,
-    timeout: 30000,
-    env: gitCredentialEnv,
-  }).then((result) => {
-    const output = result.stdout + result.stderr;
-    const match = output.match(/dashboard\/push\/([a-f0-9_]+)/);
-    if (!match) {
-      throw new Error(`Could not extract push ID from git output:\n${output}`);
-    }
-    cy.exec(`rm -rf ${cloneDir}`, { failOnNonZeroExit: false });
-    return cy.wrap(match[1]);
-  });
 });

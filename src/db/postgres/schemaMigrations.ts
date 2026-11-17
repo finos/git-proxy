@@ -201,6 +201,51 @@ export const MIGRATIONS: Migration[] = [
   CREATE INDEX IF NOT EXISTS users_scm_identities_idx ON users USING GIN (scm_identities jsonb_path_ops);
 `,
   },
+  {
+    version: 9,
+    name: 'repository_activity_summaries',
+    sql: `
+  CREATE TABLE IF NOT EXISTS push_activity_changes (
+    id TEXT PRIMARY KEY,
+    revision UUID NOT NULL DEFAULT gen_random_uuid()
+  );
+  CREATE TABLE IF NOT EXISTS push_activity (
+    id TEXT PRIMARY KEY,
+    key TEXT NOT NULL,
+    tab TEXT NOT NULL CHECK (tab IN ('pending', 'approved', 'rejected', 'canceled', 'error')),
+    timestamp DOUBLE PRECISION
+  );
+  CREATE INDEX IF NOT EXISTS push_activity_key_idx
+    ON push_activity (key) INCLUDE (tab, timestamp);
+  CREATE TABLE IF NOT EXISTS repo_push_activity (
+    key TEXT PRIMARY KEY,
+    counts JSONB NOT NULL,
+    latest_push DOUBLE PRECISION,
+    latest_pending DOUBLE PRECISION
+  );
+
+  CREATE OR REPLACE FUNCTION mark_push_activity_changed() RETURNS trigger
+  LANGUAGE plpgsql AS $$
+  BEGIN
+    IF TG_OP <> 'INSERT' THEN
+      INSERT INTO push_activity_changes (id) VALUES (OLD.id)
+      ON CONFLICT (id) DO UPDATE SET revision = EXCLUDED.revision;
+    END IF;
+    IF TG_OP = 'INSERT' OR (TG_OP = 'UPDATE' AND NEW.id IS DISTINCT FROM OLD.id) THEN
+      INSERT INTO push_activity_changes (id) VALUES (NEW.id)
+      ON CONFLICT (id) DO UPDATE SET revision = EXCLUDED.revision;
+    END IF;
+    RETURN NULL;
+  END;
+  $$;
+  CREATE TRIGGER pushes_activity_changed
+    AFTER INSERT OR UPDATE OR DELETE ON pushes
+    FOR EACH ROW EXECUTE FUNCTION mark_push_activity_changed();
+
+  INSERT INTO push_activity_changes (id) SELECT id FROM pushes
+  ON CONFLICT (id) DO UPDATE SET revision = EXCLUDED.revision;
+`,
+  },
 ];
 
 const SCHEMA_MIGRATIONS_TABLE_SQL = `
