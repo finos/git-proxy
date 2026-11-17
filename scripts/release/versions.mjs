@@ -21,8 +21,6 @@
  *   node scripts/release/versions.mjs check [dir]
  *     Fails unless the CLI version, the CLI's @finos/git-proxy pin and the
  *     matching package-lock.json entries all equal the root version.
- *   node scripts/release/versions.mjs bump <version> [dir]
- *     Sets all of the above to <version>.
  *   node scripts/release/versions.mjs dist-tag <version> <current-latest>
  *     Prints the npm dist-tag to publish <version> under.
  */
@@ -38,17 +36,11 @@ const STABLE = /^(\d+)\.(\d+)\.(\d+)$/;
 class ReleaseError extends Error {}
 
 const readJson = (file) => JSON.parse(fs.readFileSync(file, 'utf8'));
-const writeJson = (file, data) => fs.writeFileSync(file, JSON.stringify(data, null, 2) + '\n');
 
 function load(dir) {
-  const files = {
-    root: path.join(dir, 'package.json'),
-    cli: path.join(dir, CLI_PATH, 'package.json'),
-    lock: path.join(dir, 'package-lock.json'),
-  };
-  const root = readJson(files.root);
-  const cli = readJson(files.cli);
-  const lock = readJson(files.lock);
+  const root = readJson(path.join(dir, 'package.json'));
+  const cli = readJson(path.join(dir, CLI_PATH, 'package.json'));
+  const lock = readJson(path.join(dir, 'package-lock.json'));
 
   if (lock.lockfileVersion !== 3) {
     throw new ReleaseError(`Expected lockfileVersion 3, got ${lock.lockfileVersion}.`);
@@ -66,7 +58,7 @@ function load(dir) {
     throw new ReleaseError(`${CLI_PATH} no longer depends on ${ROOT_NAME}; update this script.`);
   }
 
-  return { files, root, cli, lock, lockRoot, lockCli };
+  return { root, cli, lock, lockRoot, lockCli };
 }
 
 function check(dir) {
@@ -87,25 +79,6 @@ function check(dir) {
   return { expected, problems };
 }
 
-function bump(dir, version) {
-  if (!SEMVER.test(version ?? '')) {
-    throw new ReleaseError(`'${version}' isn't a plain semver version (for example '2.2.1').`);
-  }
-  const { files, root, cli, lock, lockRoot, lockCli } = load(dir);
-
-  root.version = version;
-  cli.version = version;
-  cli.dependencies[ROOT_NAME] = version;
-  lock.version = version;
-  lockRoot.version = version;
-  lockCli.version = version;
-  lockCli.dependencies = { ...lockCli.dependencies, [ROOT_NAME]: version };
-
-  writeJson(files.root, root);
-  writeJson(files.cli, cli);
-  writeJson(files.lock, lock);
-}
-
 function parseStable(version, label) {
   const match = STABLE.exec(version ?? '');
   if (!match) throw new ReleaseError(`${label} '${version}' isn't a plain X.Y.Z version.`);
@@ -121,7 +94,9 @@ function distTag(version, currentLatest) {
   const next = parseStable(version, 'Version');
   const latest = parseStable(currentLatest, "Current 'latest'");
   const diff = next.map((part, i) => part - latest[i]).find((d) => d !== 0) ?? 0;
-  if (diff > 0) return 'latest';
+
+  // Equal counts as latest (re-running after root was published)
+  if (diff >= 0) return 'latest';
 
   // Maintenance release on an older line, so it mustn't take over 'latest'
   return `release-${next[0]}.${next[1]}`;
@@ -129,7 +104,6 @@ function distTag(version, currentLatest) {
 
 const USAGE = `Usage:
   versions.mjs check [dir]
-  versions.mjs bump <version> [dir]
   versions.mjs dist-tag <version> <current-latest>`;
 
 function main([command, ...args]) {
@@ -143,10 +117,6 @@ function main([command, ...args]) {
       console.log(`${ROOT_NAME} and ${CLI_PATH} are in lockstep at ${expected}.`);
       return 0;
     }
-    case 'bump':
-      bump(args[1] ?? '.', args[0]);
-      console.log(`Bumped ${ROOT_NAME} and ${CLI_PATH} to ${args[0]}.`);
-      return 0;
     case 'dist-tag':
       console.log(distTag(args[0], args[1]));
       return 0;

@@ -72,6 +72,18 @@ jobs:
           DIST_TAG=$(node scripts/release/versions.mjs dist-tag "$VERSION" "$CURRENT_LATEST")
           echo "Publishing $PKG_NAME@$VERSION and $CLI_NAME@$VERSION under '$DIST_TAG'"
 
+          # Skips a package whose version is already on npm, so the workflow can be
+          # re-run if the CLI fails to publish after the root package went out
+          publish() {
+            local name="$1"
+            shift
+            if npm view "$name@$VERSION" version >/dev/null 2>&1; then
+              echo "$name@$VERSION is already on npm, skipping"
+              return 0
+            fi
+            npm publish "${PUBLISH_FLAGS[@]}" --tag "$DIST_TAG" "$@"
+          }
+
           # The CLI pins the root package at this exact version, so publish the root first
-          npm publish "${PUBLISH_FLAGS[@]}" --tag "$DIST_TAG"
-          npm publish "${PUBLISH_FLAGS[@]}" --tag "$DIST_TAG" -w packages/git-proxy-cli
+          publish "$PKG_NAME"
+          publish "$CLI_NAME" -w packages/git-proxy-cli
