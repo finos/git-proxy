@@ -134,6 +134,17 @@ async function waitForResult(
   }
 }
 
+/**
+ * Whether the client that sent this push has gone away
+ * (HTTP socket closed, or SSH session ended).
+ */
+function isClientDisconnected(req: ProxiedRequest): boolean {
+  if (req.isSSH) {
+    return req.sshClient?.disconnected === true;
+  }
+  return req.socket?.destroyed === true;
+}
+
 const trace = (message: string) =>
   console.log(`[ExternalServiceIntegration] ${new Date().toISOString()} ${message}`);
 

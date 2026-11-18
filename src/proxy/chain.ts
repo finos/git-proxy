@@ -17,7 +17,7 @@
 import { Request, Response } from 'express';
 
 import { PluginLoader, ActionPlugin, PushActionPlugin } from '../plugin';
-import { Action, Step, RequestType, PushType } from './actions';
+import { Action, RequestType, PushType } from './actions';
 import * as proc from './processors';
 import {
   ProcessorExec,
@@ -29,7 +29,7 @@ import {
 } from './processors/types';
 import { attemptAutoApproval, attemptAutoRejection } from './actions/autoActions';
 import { handleErrorAndLog } from '../utils/errors';
-import { createProgressWriter, ProgressWriter } from './sideband';
+import { createProgressWriter } from './sideband';
 
 const branchPushChainElements: ChainElement[] = [
   proc.push.resolveUserFromToken,
@@ -133,63 +133,6 @@ const getProgressMessage = (fn: ProcessorExec): string => {
   return 'Running plugin';
 };
 
-const KEEPALIVE_INTERVAL_MS = 15000;
-
-const CLIENT_DISCONNECT_MESSAGE =
-  'Client disconnected while the push was being processed. Please run "git push" again.';
-
-const AUTO_APPROVAL_NOT_RECORDED_MESSAGE =
-  'Auto-approval could not be recorded. Push was not forwarded.';
-
-export const isClientDisconnected = (req: Request): boolean => {
-  const sshReq = req as Request & { isSSH?: boolean; sshClient?: { disconnected?: boolean } };
-  if (sshReq?.isSSH) {
-    return sshReq.sshClient?.disconnected === true;
-  }
-  return req?.socket?.destroyed === true;
-};
-
-const cancelForDisconnect = (action: Action): void => {
-  console.log(`Client disconnected during push, canceling action ${action.id}`);
-  const step = new Step('clientDisconnected');
-  step.log(CLIENT_DISCONNECT_MESSAGE);
-  action.addStep(step);
-  action.allowPush = false;
-  action.canceled = true;
-  action.error = true;
-  action.errorMessage = CLIENT_DISCONNECT_MESSAGE;
-};
-
-const runStepAndKeepAlive = async (
-  fn: ProcessorExec,
-  req: Request,
-  res: Response,
-  action: Action,
-  progress: ProgressWriter,
-): Promise<Action> => {
-  if (!progress.active) {
-    return fn(req, action);
-  }
-
-  const label = getProgressMessage(fn);
-  const keepaliveLabel = label.charAt(0).toLowerCase() + label.slice(1);
-  const startedAt = Date.now();
-  const keepalive = setInterval(() => {
-    if (isClientDisconnected(req) || res.writableEnded || res.destroyed) {
-      clearInterval(keepalive);
-      return;
-    }
-    const elapsed = Date.now() - startedAt;
-    progress.message(`Still ${keepaliveLabel}... (${elapsed}ms elapsed)`);
-  }, KEEPALIVE_INTERVAL_MS);
-
-  try {
-    return await fn(req, action);
-  } finally {
-    clearInterval(keepalive);
-  }
-};
-
 export const executeChain = async (req: Request, res: Response): Promise<Action> => {
   let action: Action = {} as Action;
   let checkoutCleanUpRequired = false;
@@ -213,12 +156,6 @@ export const executeChain = async (req: Request, res: Response): Promise<Action>
       if (fn === proc.push.blockForAuth && !action.continue()) {
         break;
       }
-
-      if (action.type === RequestType.PUSH && isClientDisconnected(req)) {
-        cancelForDisconnect(action);
-        break;
-      }
-
 
       progress.message(`${getProgressMessage(fn)}...`);
 
@@ -407,5 +344,4 @@ export default {
   },
   executeChain,
   getChain,
-  isClientDisconnected,
 };

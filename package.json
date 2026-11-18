@@ -35,11 +35,6 @@
       "import": "./dist/src/proxy/actions/index.js",
       "require": "./dist/src/proxy/actions/index.js"
     },
-    "./proxy/chain": {
-      "types": "./dist/src/proxy/chain.d.ts",
-      "import": "./dist/src/proxy/chain.js",
-      "require": "./dist/src/proxy/chain.js"
-    },
     "./ui": {
       "types": "./dist/src/ui/index.d.ts",
       "import": "./dist/src/ui/index.js",
