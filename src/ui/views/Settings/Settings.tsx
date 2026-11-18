@@ -88,16 +88,28 @@ const SettingsView = () => {
                 <TextInput.Action
                   icon={showToken ? EyeClosedIcon : EyeIcon}
                   aria-label={showToken ? 'Hide token' : 'Show token'}
+                  data-testid='jwt-token-toggle'
                   onClick={() => setShowToken((s) => !s)}
                 />
               }
             />
           </FormControl>
           <div className='flex w-full justify-end gap-2'>
-            <Button type='button' onClick={handleClear} leadingVisual={TrashIcon}>
+            <Button
+              type='button'
+              onClick={handleClear}
+              leadingVisual={TrashIcon}
+              data-testid='jwt-clear-btn'
+            >
               Clear
             </Button>
-            <Button type='button' variant='primary' onClick={handleSave} leadingVisual={CheckIcon}>
+            <Button
+              type='button'
+              variant='primary'
+              onClick={handleSave}
+              leadingVisual={CheckIcon}
+              data-testid='jwt-save-btn'
+            >
               Save
             </Button>
           </div>

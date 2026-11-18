@@ -47,7 +47,7 @@ export const configure = async (passport: PassportStatic): Promise<PassportStati
     config = await discovery(server, clientID, clientSecret);
   } catch (error: unknown) {
     const msg = handleErrorAndLog(error, 'Error during OIDC discovery');
-    throw new Error(`OIDC setup error (discovery): ${msg}`);
+    throw new Error(`OIDC setup error (discovery): ${msg}`, { cause: error });
   }
 
   try {
@@ -87,7 +87,7 @@ export const configure = async (passport: PassportStatic): Promise<PassportStati
     return passport;
   } catch (error: unknown) {
     const msg = handleErrorAndLog(error, 'Error during OIDC passport setup');
-    throw new Error(`OIDC setup error (strategy): ${msg}`);
+    throw new Error(`OIDC setup error (strategy): ${msg}`, { cause: error });
   }
 };
 

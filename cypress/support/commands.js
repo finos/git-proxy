@@ -46,22 +46,25 @@
  * so we use absolute URLs constructed from Cypress.config('baseUrl').
  */
 function getApiBaseUrl() {
-  return Cypress.env('API_BASE_URL') || Cypress.config('baseUrl');
+  return Cypress.expose('API_BASE_URL') || Cypress.config('baseUrl');
 }
 
-// start of a login command with sessions
-// TODO: resolve issues with the CSRF token
+/**
+ * Logs in through the API and caches the session. The login form itself is covered by
+ * login.cy.js; going through the API here keeps every other spec independent of form timing.
+ */
 Cypress.Commands.add('login', (username, password) => {
   cy.session([username, password], () => {
-    cy.visit('/login');
-    cy.intercept('GET', '**/api/auth/profile').as('getUser');
-
-    cy.get('[data-test=username]').type(username);
-    cy.get('[data-test=password]').type(password);
-    cy.get('[data-test=login]').click();
-
-    cy.wait('@getUser');
-    cy.url().should('include', '/dashboard/repo');
+    cy.getCSRFToken().then((csrfToken) => {
+      cy.request({
+        method: 'POST',
+        url: `${getApiBaseUrl()}/api/auth/login`,
+        body: { username, password },
+        headers: { 'X-CSRF-TOKEN': csrfToken },
+      })
+        .its('status')
+        .should('eq', 200);
+    });
   });
 });
 
@@ -172,29 +175,38 @@ Cypress.Commands.add('registerTestRepo', (url) => {
 });
 
 Cypress.Commands.add('createUser', (username, password, email, scmIdentities = {}) => {
-  cy.request({
-    method: 'POST',
-    url: `${getApiBaseUrl()}/api/auth/create-user`,
-    body: { username, password, email, admin: false, scmIdentities },
-    failOnStatusCode: false,
+  cy.getCSRFToken().then((csrfToken) => {
+    cy.request({
+      method: 'POST',
+      url: `${getApiBaseUrl()}/api/auth/create-user`,
+      body: { username, password, email, admin: false, scmIdentities },
+      headers: { 'X-CSRF-TOKEN': csrfToken },
+      failOnStatusCode: false,
+    });
   });
 });
 
 Cypress.Commands.add('addUserPushPermission', (repoId, username) => {
-  cy.request({
-    method: 'PATCH',
-    url: `${getApiBaseUrl()}/api/v1/repo/${repoId}/user/push`,
-    body: { username },
-    failOnStatusCode: false,
+  cy.getCSRFToken().then((csrfToken) => {
+    cy.request({
+      method: 'PATCH',
+      url: `${getApiBaseUrl()}/api/v1/repo/${repoId}/user/push`,
+      body: { username },
+      headers: { 'X-CSRF-TOKEN': csrfToken },
+      failOnStatusCode: false,
+    });
   });
 });
 
 Cypress.Commands.add('addUserAuthorisePermission', (repoId, username) => {
-  cy.request({
-    method: 'PATCH',
-    url: `${getApiBaseUrl()}/api/v1/repo/${repoId}/user/authorise`,
-    body: { username },
-    failOnStatusCode: false,
+  cy.getCSRFToken().then((csrfToken) => {
+    cy.request({
+      method: 'PATCH',
+      url: `${getApiBaseUrl()}/api/v1/repo/${repoId}/user/authorise`,
+      body: { username },
+      headers: { 'X-CSRF-TOKEN': csrfToken },
+      failOnStatusCode: false,
+    });
   });
 });
 
@@ -216,7 +228,7 @@ Cypress.Commands.add('getTestRepoId', () => {
         `GET ${url} returned non-array (${typeof res.body}): ${JSON.stringify(res.body).slice(0, 500)}`,
       );
     }
-    const gitServerTarget = Cypress.env('GIT_SERVER_TARGET') || 'git-server:8443';
+    const gitServerTarget = Cypress.expose('GIT_SERVER_TARGET') || 'git-server:8443';
     const repo = res.body.find(
       (r) => r.url === `https://${gitServerTarget}/test-owner/test-repo.git`,
     );
@@ -250,6 +262,42 @@ Cypress.Commands.add('cleanupTestRepos', () => {
   });
 });
 
+/**
+ * Registers a repository through the API and yields the created record.
+ */
+Cypress.Commands.add('createTestRepo', (project, name, url) => {
+  return cy.getCSRFToken().then((csrfToken) =>
+    cy
+      .request({
+        method: 'POST',
+        url: `${getApiBaseUrl()}/api/v1/repo`,
+        body: { project, name, url },
+        headers: { 'X-CSRF-TOKEN': csrfToken },
+      })
+      .its('body'),
+  );
+});
+
+/**
+ * Stubs the per-repository SCM metadata lookup so list and detail pages do not depend on the
+ * upstream host being reachable for the made-up repositories the specs register.
+ */
+Cypress.Commands.add('stubScmMetadata', () => {
+  cy.intercept('GET', '**/api/v1/repo/*/scm-metadata', { statusCode: 200, body: null });
+});
+
+/**
+ * Enters a whole value into a search box in one input event, the way a paste does. The list pages
+ * keep the search text in the URL, and Cypress types fast enough that keystrokes can land before the
+ * previous URL update has rendered.
+ */
+Cypress.Commands.add('pasteInto', { prevSubject: 'element' }, ($input, value) => {
+  const setValue = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set;
+  setValue.call($input[0], value);
+  $input[0].dispatchEvent(new Event('input', { bubbles: true }));
+  return cy.wrap($input).should('have.value', value);
+});
+
 Cypress.Commands.add('deleteRepo', (repoId) => {
   cy.getCSRFToken().then((csrfToken) => {
     cy.request({
@@ -264,76 +312,66 @@ Cypress.Commands.add('deleteRepo', (repoId) => {
 });
 
 /**
+ * The cleanup helpers below call test-only endpoints that the API mounts when NODE_ENV=test (as in
+ * the Docker Compose stack). Elsewhere the endpoints do not exist and the calls are no-ops, so
+ * specs that use them must also tolerate data left over from earlier runs.
+ */
+Cypress.Commands.add('deleteTestPush', (pushId) => {
+  cy.getCSRFToken().then((csrfToken) => {
+    cy.request({
+      method: 'DELETE',
+      url: `${getApiBaseUrl()}/api/v1/test/push/${pushId}`,
+      headers: { 'X-CSRF-TOKEN': csrfToken },
+      failOnStatusCode: false,
+    });
+  });
+});
+
+Cypress.Commands.add('deleteTestUser', (username) => {
+  cy.getCSRFToken().then((csrfToken) => {
+    cy.request({
+      method: 'DELETE',
+      url: `${getApiBaseUrl()}/api/v1/test/user/${username}`,
+      headers: { 'X-CSRF-TOKEN': csrfToken },
+      failOnStatusCode: false,
+    });
+  });
+});
+
+/**
  * Mints a Forgejo access token for a seeded user from their password. The proxy identifies a
  * pusher by asking the upstream's API who the token belongs to, and that API does not accept a
  * password in the token's place, so pushes must present a token. Forgejo allows creating one
  * with plain basic auth. Token names must be unique per user, so each call mints its own.
  */
 Cypress.Commands.add('mintUpstreamToken', (username, password) => {
-  const gitServerUrl = Cypress.env('GIT_SERVER_URL') || 'https://localhost:8443';
-  const name = `cypress-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-  const body = JSON.stringify({ name, scopes: ['write:repository', 'read:user'] });
-  // curl rather than cy.request: the test server's certificate is self-signed.
-  cy.exec(
-    `curl -sk -u '${username}:${password}' -H 'Content-Type: application/json' ` +
-      `-d '${body}' ${gitServerUrl}/api/v1/users/${username}/tokens`,
-    { timeout: 15000 },
-  ).then((result) => {
-    const token = JSON.parse(result.stdout).sha1;
-    if (!token) {
-      throw new Error(`Could not mint a token for ${username}: ${result.stdout}`);
-    }
-    return cy.wrap(token, { log: false });
-  });
+  // Cypress 16 removed cy.exec(); mint via a Node task so we can ignore the
+  // self-signed Forgejo certificate without shelling out to curl.
+  return cy
+    .task(
+      'mintUpstreamToken',
+      {
+        username,
+        password,
+        gitServerUrl: Cypress.expose('GIT_SERVER_URL') || 'https://localhost:8443',
+      },
+      { timeout: 15000, log: false },
+    )
+    .then((token) => cy.wrap(token, { log: false }));
 });
 
 Cypress.Commands.add('createPush', (gitUser, gitPassword, gitEmail, uniqueSuffix) => {
-  const proxyUrl = Cypress.env('GIT_PROXY_URL') || 'http://localhost:8000';
-  const gitServerTarget = Cypress.env('GIT_SERVER_TARGET') || 'git-server:8443';
-  const repoUrl = `${proxyUrl}/${gitServerTarget}/test-owner/test-repo.git`;
-  const cloneDir = `/tmp/cypress-push-${uniqueSuffix}`;
-
-  // Pass credentials via GIT_CONFIG_* env vars to avoid exposing them in command output
-  const gitCredentialEnv = {
-    GIT_TERMINAL_PROMPT: '0',
-    NODE_TLS_REJECT_UNAUTHORIZED: '0',
-    GIT_CONFIG_COUNT: '1',
-    GIT_CONFIG_KEY_0: `url.${proxyUrl.replace('://', `://${gitUser}:${gitPassword}@`)}.insteadOf`,
-    GIT_CONFIG_VALUE_0: proxyUrl,
-  };
-
-  cy.exec(`rm -rf ${cloneDir}`, { failOnNonZeroExit: false });
-  cy.exec(`git clone ${repoUrl} ${cloneDir}`, {
-    timeout: 30000,
-    env: gitCredentialEnv,
-  });
-  cy.exec(`git -C ${cloneDir} config user.name "${gitUser}"`);
-  cy.exec(`git -C ${cloneDir} config user.email "${gitEmail}"`);
-
-  // Pull any upstream changes to avoid conflicts from previous test runs
-  cy.exec(`git -C ${cloneDir} pull --rebase origin main`, {
-    failOnNonZeroExit: false,
-    timeout: 30000,
-    env: gitCredentialEnv,
-  });
-
-  const timestamp = Date.now();
-  cy.exec(
-    `echo "test-${uniqueSuffix}-${timestamp}" > ${cloneDir}/cypress-test-${uniqueSuffix}.txt`,
+  // Cypress 16 removed cy.exec(); the clone/commit/push sequence runs in Node.
+  return cy.task(
+    'createPush',
+    {
+      gitUser,
+      gitPassword,
+      gitEmail,
+      uniqueSuffix,
+      proxyUrl: Cypress.expose('GIT_PROXY_URL') || 'http://localhost:8000',
+      gitServerTarget: Cypress.expose('GIT_SERVER_TARGET') || 'git-server:8443',
+    },
+    { timeout: 120000 },
   );
-  cy.exec(`git -C ${cloneDir} add .`);
-  cy.exec(`git -C ${cloneDir} commit -m "cypress e2e test: ${uniqueSuffix}"`);
-  cy.exec(`git -C ${cloneDir} push origin main 2>&1`, {
-    failOnNonZeroExit: false,
-    timeout: 30000,
-    env: gitCredentialEnv,
-  }).then((result) => {
-    const output = result.stdout + result.stderr;
-    const match = output.match(/dashboard\/push\/([a-f0-9_]+)/);
-    if (!match) {
-      throw new Error(`Could not extract push ID from git output:\n${output}`);
-    }
-    cy.exec(`rm -rf ${cloneDir}`, { failOnNonZeroExit: false });
-    return cy.wrap(match[1]);
-  });
 });

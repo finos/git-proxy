@@ -613,7 +613,9 @@ export class SSHServer {
           chainResult = await chain.executeChain(req, res);
         } catch (chainExecError) {
           console.error(`[SSH] Chain execution threw error:`, chainExecError);
-          throw new Error(`Security chain execution failed: ${chainExecError}`);
+          throw new Error(`Security chain execution failed: ${chainExecError}`, {
+            cause: chainExecError,
+          });
         }
 
         if (chainResult.error || chainResult.blocked) {

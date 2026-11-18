@@ -15,6 +15,8 @@
     "./example.cjs": "./example.cjs",
     "./customSecretScanner": "./dist/customSecretScanner.js",
     "./externalServiceIntegration": "./dist/externalServiceIntegration.js"
+    "./extractPullData": "./dist/extractPullData/index.js",
+    "./pullSecretScanner": "./dist/pullSecretScanner.js"
   },
   "files": [
     "index.js",
@@ -25,11 +27,16 @@
     "dist/externalServiceIntegration.js",
     "mockDlpService.ts",
     "dist/mockDlpService.js",
+    "pullSecretScanner.ts",
+    "dist/pullSecretScanner.js",
+    "extractPullData/*.ts",
+    "dist/extractPullData/*.js",
     "README.md"
   ],
   "dependencies": {
     "express": "^5.2.1",
-    "parse-diff": "^0.12.0"
+    "parse-diff": "^0.12.0",
+    "simple-git": "^4.0.2"
   },
   "devDependencies": {
     "typescript": "^6.0.3"

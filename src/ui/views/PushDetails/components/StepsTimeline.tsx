@@ -85,6 +85,7 @@ function StepRow({ step, expanded, onToggle }: StepRowProps): React.ReactElement
             disabled={!hasDetails}
             className='flex w-full min-w-0 cursor-default items-center gap-2 rounded-sm text-left disabled:cursor-default'
             aria-expanded={hasDetails ? expanded : undefined}
+            data-testid={`step-name-${step.stepName}`}
           >
             {hasDetails ? (
               expanded ? (
@@ -102,7 +103,10 @@ function StepRow({ step, expanded, onToggle }: StepRowProps): React.ReactElement
           </button>
 
           {hasDetails && expanded && (
-            <div className='mt-2 ml-5 min-w-0 space-y-2'>
+            <div
+              className='mt-2 ml-5 min-w-0 space-y-2'
+              data-testid={`step-details-${step.stepName}`}
+            >
               {step.error && step.errorMessage && (
                 <div className='min-w-0 rounded-md border border-(--borderColor-danger-emphasis) bg-(--bgColor-danger-muted) px-3 py-2'>
                   <Text as='p' className='m-0 text-xs font-semibold text-(--fgColor-danger)'>

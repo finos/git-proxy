@@ -553,6 +553,7 @@ const PushesTable = ({
     <div className='w-full min-w-0'>
       <div
         ref={tableShellRef}
+        data-testid='pushes-table'
         className={`${activityTableShellRowClass} overflow-x-auto rounded-md border border-[var(--borderColor-default)]`}
       >
         <DataTable<PushTableRow> cellPadding='condensed' columns={columns} data={tableRows} />

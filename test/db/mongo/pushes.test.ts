@@ -19,12 +19,16 @@ import { describe, it, expect, afterEach, vi, beforeEach } from 'vitest';
 const mockFindOneDocument = vi.fn();
 const mockUpdateOne = vi.fn();
 const mockConnect = vi.fn(() => ({
+  aggregate: vi.fn(() => ({ toArray: vi.fn().mockResolvedValue([]) })),
   updateOne: mockUpdateOne,
+  createIndex: vi.fn().mockResolvedValue('index'),
 }));
+const mockDatabase = {};
 
 vi.mock('../../../src/db/mongo/helper', () => ({
   connect: mockConnect,
   findOneDocument: mockFindOneDocument,
+  getDb: () => mockDatabase,
 }));
 
 describe('MongoDB - Pushes', async () => {
@@ -63,7 +67,10 @@ describe('MongoDB - Pushes', async () => {
       const result = await reject(pushId, rejection);
 
       expect(result).toEqual({ message: `reject ${pushId}` });
-      expect(mockFindOneDocument).toHaveBeenCalledWith('pushes', { id: pushId });
+      expect(mockFindOneDocument).toHaveBeenCalledWith('pushes', {
+        id: pushId,
+        '_activity.deleted': { $ne: true },
+      });
       expect(mockConnect).toHaveBeenCalledWith('pushes');
 
       const [query, update, options] = mockUpdateOne.mock.calls[0];
@@ -97,7 +104,10 @@ describe('MongoDB - Pushes', async () => {
       };
 
       await expect(reject(pushId, rejection)).rejects.toThrow(`push ${pushId} not found`);
-      expect(mockFindOneDocument).toHaveBeenCalledWith('pushes', { id: pushId });
+      expect(mockFindOneDocument).toHaveBeenCalledWith('pushes', {
+        id: pushId,
+        '_activity.deleted': { $ne: true },
+      });
     });
   });
 });

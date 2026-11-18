@@ -25,14 +25,21 @@ import ts from 'typescript';
 
 const packageRoot = dirname(fileURLToPath(import.meta.url));
 const outDir = join(packageRoot, 'dist');
-const entries = ['customSecretScanner', 'externalServiceIntegration', 'mockDlpService'];
 
-mkdirSync(outDir, { recursive: true });
+const sources = [
+  'customSecretScanner.ts',
+  'pullSecretScanner.ts',
+  'extractPullData/index.ts',
+  'extractPullData/parsePull.ts',
+  'extractPullData/fetchWanted.ts',
+  'extractPullData/resolveWants.ts',
+  'externalServiceIntegration.ts',
+  'mockDlpService.ts'
+];
 
-for (const entry of entries) {
-  const sourcePath = join(packageRoot, `${entry}.ts`);
-  const source = readFileSync(sourcePath, 'utf8');
-  const result = ts.transpileModule(source, {
+for (const source of sources) {
+  const sourcePath = join(packageRoot, source);
+  const result = ts.transpileModule(readFileSync(sourcePath, 'utf8'), {
     fileName: sourcePath,
     compilerOptions: {
       target: ts.ScriptTarget.ES2022,
@@ -51,5 +58,7 @@ for (const entry of entries) {
     throw new Error(message);
   }
 
-  writeFileSync(join(outDir, `${entry}.js`), result.outputText);
+  const outPath = join(outDir, source.replace(/\.ts$/, '.js'));
+  mkdirSync(dirname(outPath), { recursive: true });
+  writeFileSync(outPath, result.outputText);
 }
