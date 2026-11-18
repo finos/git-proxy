@@ -416,19 +416,6 @@
         }
       }
     },
-    "uiRouteAuth": {
-      "description": "UI routes that require authentication (logged in or admin)",
-      "type": "object",
-      "properties": {
-        "enabled": { "type": "boolean" },
-        "rules": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/routeAuthRule"
-          }
-        }
-      }
-    },
     "ssh": {
       "description": "SSH proxy server configuration. The proxy uses SSH agent forwarding to authenticate with remote Git servers (GitHub, GitLab, etc.) using the client's SSH keys. The proxy's own host key is auto-generated and only used to identify the proxy to connecting clients.",
       "type": "object",
@@ -808,14 +795,6 @@
           "required": ["type", "enabled", "jwtConfig"]
         }
       ]
-    },
-    "routeAuthRule": {
-      "type": "object",
-      "properties": {
-        "pattern": { "type": "string" },
-        "adminOnly": { "type": "boolean" },
-        "loginRequired": { "type": "boolean" }
-      }
     },
     "roleMapping": {
       "type": "object",

@@ -25,7 +25,6 @@ interface AxiosConfig {
   withCredentials: boolean;
   headers: {
     'X-CSRF-TOKEN': string;
-    Authorization?: string;
   };
 }
 
@@ -59,12 +58,10 @@ export const getUserInfo = async (): Promise<PublicUser | null> => {
  * Gets the Axios config for the UI
  */
 export const getAxiosConfig = (): AxiosConfig => {
-  const jwtToken = localStorage.getItem('ui_jwt_token');
   return {
     withCredentials: true,
     headers: {
       'X-CSRF-TOKEN': getCookie('csrf') || '',
-      Authorization: jwtToken ? `Bearer ${jwtToken}` : undefined,
     },
   };
 };
@@ -78,10 +75,11 @@ export const processAuthError = (
 ): string => {
   const errorMessage = error.response?.data?.message?.trim() ?? 'Unknown error';
   let msg = `Failed to authorize user: ${errorMessage}. `;
-  if (jwtAuthEnabled && !localStorage.getItem('ui_jwt_token')) {
-    msg += 'Set your JWT token in the settings page or disable JWT auth in your app configuration.';
+  if (jwtAuthEnabled) {
+    msg +=
+      'For API clients, send a valid Bearer JWT. Session-authenticated UI users do not need a JWT.';
   } else {
-    msg += 'Check your JWT token or disable JWT auth in your app configuration.';
+    msg += 'Ensure you are logged in with a valid session.';
   }
   return msg;
 };

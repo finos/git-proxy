@@ -148,10 +148,6 @@ export interface GitProxyConfig {
    */
   uiPort?: number;
   /**
-   * UI routes that require authentication (logged in or admin)
-   */
-  uiRouteAuth?: UIRouteAuth;
-  /**
    * Configuration for routing outbound requests to upstream Git hosts via an HTTP(S) proxy.
    */
   upstreamProxy?: UpstreamProxy;
@@ -828,22 +824,6 @@ export interface TLS {
 }
 
 /**
- * UI routes that require authentication (logged in or admin)
- */
-export interface UIRouteAuth {
-  enabled?: boolean;
-  rules?: RouteAuthRule[];
-  [property: string]: any;
-}
-
-export interface RouteAuthRule {
-  adminOnly?: boolean;
-  loginRequired?: boolean;
-  pattern?: string;
-  [property: string]: any;
-}
-
-/**
  * Configuration for routing outbound requests to upstream Git hosts via an HTTP(S) proxy.
  */
 export interface UpstreamProxy {
@@ -1121,7 +1101,6 @@ const typeMap: any = {
       { json: 'tls', js: 'tls', typ: u(undefined, r('TLS')) },
       { json: 'uiHost', js: 'uiHost', typ: u(undefined, '') },
       { json: 'uiPort', js: 'uiPort', typ: u(undefined, 3.14) },
-      { json: 'uiRouteAuth', js: 'uiRouteAuth', typ: u(undefined, r('UIRouteAuth')) },
       { json: 'upstreamProxy', js: 'upstreamProxy', typ: u(undefined, r('UpstreamProxy')) },
       { json: 'urlShortener', js: 'urlShortener', typ: u(undefined, '') },
     ],
@@ -1379,21 +1358,6 @@ const typeMap: any = {
       { json: 'cert', js: 'cert', typ: '' },
       { json: 'enabled', js: 'enabled', typ: true },
       { json: 'key', js: 'key', typ: '' },
-    ],
-    'any',
-  ),
-  UIRouteAuth: o(
-    [
-      { json: 'enabled', js: 'enabled', typ: u(undefined, true) },
-      { json: 'rules', js: 'rules', typ: u(undefined, a(r('RouteAuthRule'))) },
-    ],
-    'any',
-  ),
-  RouteAuthRule: o(
-    [
-      { json: 'adminOnly', js: 'adminOnly', typ: u(undefined, true) },
-      { json: 'loginRequired', js: 'loginRequired', typ: u(undefined, true) },
-      { json: 'pattern', js: 'pattern', typ: u(undefined, '') },
     ],
     'any',
   ),

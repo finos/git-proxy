@@ -206,21 +206,6 @@
     "key": "certs/key.pem",
     "cert": "certs/cert.pem"
   },
-  "uiRouteAuth": {
-    "enabled": false,
-    "rules": [
-      {
-        "pattern": "/dashboard/*",
-        "adminOnly": false,
-        "loginRequired": true
-      },
-      {
-        "pattern": "/admin/*",
-        "adminOnly": true,
-        "loginRequired": true
-      }
-    ]
-  },
   "ssh": {
     "enabled": false,
     "port": 2222,

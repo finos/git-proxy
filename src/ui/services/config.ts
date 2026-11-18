@@ -16,7 +16,6 @@
 
 import axios from 'axios';
 import { QuestionFormData } from '../types';
-import { UIRouteAuth } from '../../config/generated/config';
 import { getApiV1BaseUrl } from './apiConfig';
 
 const setAttestationConfigData = async (setData: (data: QuestionFormData[]) => void) => {
@@ -40,13 +39,4 @@ const setEmailContactData = async (setData: (data: string) => void) => {
   setData(response.data);
 };
 
-const setUIRouteAuthData = async (setData: (data: UIRouteAuth) => void) => {
-  const apiV1Base = await getApiV1BaseUrl();
-  const urlString = `${apiV1Base}/config/uiRouteAuth`;
-  console.log(`URL: ${urlString}`);
-  const url = new URL(urlString);
-  const response = await axios(url.toString());
-  setData(response.data);
-};
-
-export { setAttestationConfigData, setURLShortenerData, setEmailContactData, setUIRouteAuthData };
+export { setAttestationConfigData, setURLShortenerData, setEmailContactData };
