@@ -28,10 +28,8 @@ describe('Repo', () => {
       cy.visit('/dashboard/repo');
     });
 
-    it('Prevents anonymous users from adding repos', () => {
-      cy.get('[data-testid="repo-list-view"]')
-        .find('[data-testid="add-repo-button"]')
-        .should('not.exist');
+    it('Redirects anonymous users to /login', () => {
+      cy.url().should('include', '/login');
     });
   });
 
