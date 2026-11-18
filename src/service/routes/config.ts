@@ -32,10 +32,6 @@ router.get('/contactEmail', (_req: Request, res: Response) => {
   res.send(config.getContactEmail());
 });
 
-router.get('/uiRouteAuth', (_req: Request, res: Response) => {
-  res.send(config.getUIRouteAuth());
-});
-
 router.get('/scmProviders', (_req: Request, res: Response) => {
   res.send(getProviders().map(({ name, type, host }) => ({ name, type, host })));
 });

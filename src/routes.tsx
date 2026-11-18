@@ -22,7 +22,6 @@ import User from './ui/views/User/UserProfile';
 import UserList from './ui/views/UserList/UserList';
 import RepoDetails from './ui/views/RepoDetails/RepoDetails';
 import RepoList from './ui/views/RepoList/RepoList';
-import SettingsView from './ui/views/Settings/Settings';
 
 import { Route } from './ui/types';
 
@@ -30,64 +29,49 @@ const dashboardRoutes: Route[] = [
   {
     path: '/repo',
     name: 'Repositories',
-    component: (props) => <RouteGuard component={RepoList} fullRoutePath={`/dashboard/repo`} />,
+    component: () => <RouteGuard component={RepoList} />,
     layout: '/dashboard',
     visible: true,
   },
   {
     path: '/repo/:id',
     name: 'Repo Details',
-    component: (props) => (
-      <RouteGuard component={RepoDetails} fullRoutePath={`/dashboard/repo/:id`} />
-    ),
+    component: () => <RouteGuard component={RepoDetails} />,
     layout: '/dashboard',
     visible: false,
   },
   {
     path: '/push',
     name: 'Activity',
-    component: (props) => <RouteGuard component={PushRequests} fullRoutePath={`/dashboard/push`} />,
+    component: () => <RouteGuard component={PushRequests} />,
     layout: '/dashboard',
     visible: true,
   },
   {
     path: '/push/:id',
     name: 'Open Push Requests',
-    component: (props) => (
-      <RouteGuard component={PushDetails} fullRoutePath={`/dashboard/push/:id`} />
-    ),
+    component: () => <RouteGuard component={PushDetails} />,
     layout: '/dashboard',
     visible: false,
   },
   {
     path: '/profile',
     name: 'My Account',
-    component: (props) => <RouteGuard component={User} fullRoutePath={`/dashboard/profile`} />,
+    component: () => <RouteGuard component={User} />,
     layout: '/dashboard',
     visible: false,
   },
   {
     path: '/admin/user',
     name: 'Users',
-    component: (props) => (
-      <RouteGuard component={UserList} fullRoutePath={`/dashboard/admin/user`} />
-    ),
+    component: () => <RouteGuard component={UserList} />,
     layout: '/dashboard',
     visible: true,
   },
   {
     path: '/user/:id',
     name: 'User',
-    component: (props) => <RouteGuard component={User} fullRoutePath={`/dashboard/user/:id`} />,
-    layout: '/dashboard',
-    visible: false,
-  },
-  {
-    path: '/admin/settings',
-    name: 'Settings',
-    component: (props) => (
-      <RouteGuard component={SettingsView} fullRoutePath={`/dashboard/admin/settings`} />
-    ),
+    component: () => <RouteGuard component={User} />,
     layout: '/dashboard',
     visible: false,
   },

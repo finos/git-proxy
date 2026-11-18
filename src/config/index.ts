@@ -64,7 +64,6 @@ const REQUIRED_TOP_LEVEL_CONFIG_KEYS = [
   'tls',
   'uiHost',
   'uiPort',
-  'uiRouteAuth',
   'upstreamProxy',
   'urlShortener',
 ] as const satisfies readonly RequiredTopLevelConfigKey[];
@@ -518,11 +517,6 @@ export const getTLSEnabled = (): boolean => {
 export const getDomains = () => {
   const config = loadFullConfiguration();
   return config.domains;
-};
-
-export const getUIRouteAuth = () => {
-  const config = loadFullConfiguration();
-  return config.uiRouteAuth;
 };
 
 export const getRateLimit = () => {

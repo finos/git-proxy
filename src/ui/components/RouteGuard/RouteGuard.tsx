@@ -14,42 +14,20 @@
  * limitations under the License.
  */
 
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { Navigate } from 'react-router';
 import { Spinner, Text } from '@primer/react';
 import { useAuth } from '../../auth/AuthProvider';
-import { setUIRouteAuthData } from '../../services/config';
-import { UIRouteAuth } from '../../../config/generated/config';
 
 interface RouteGuardProps {
   component: React.ComponentType;
-  fullRoutePath: string;
+  adminOnly?: boolean;
 }
 
-const RouteGuard = ({ component: Component, fullRoutePath }: RouteGuardProps) => {
+const RouteGuard = ({ component: Component, adminOnly = false }: RouteGuardProps) => {
   const { user, isLoading } = useAuth();
 
-  const [loginRequired, setLoginRequired] = useState(false);
-  const [adminOnly, setAdminOnly] = useState(false);
-  const [authChecked, setAuthChecked] = useState(false);
-
-  useEffect(() => {
-    setUIRouteAuthData((uiRouteAuth: UIRouteAuth) => {
-      if (uiRouteAuth?.enabled) {
-        for (const rule of uiRouteAuth.rules ?? []) {
-          if (new RegExp(rule.pattern ?? '').test(fullRoutePath)) {
-            // Allow multiple rules to be applied according to route precedence
-            // Ex: /dashboard/admin/* will override /dashboard/*
-            setLoginRequired(loginRequired || rule.loginRequired || false);
-            setAdminOnly(adminOnly || rule.adminOnly || false);
-          }
-        }
-      }
-      setAuthChecked(true);
-    });
-  }, [fullRoutePath]);
-
-  if (!authChecked || isLoading) {
+  if (isLoading) {
     return (
       <div className='flex w-full min-w-0 items-center gap-2'>
         <Spinner />
@@ -58,15 +36,15 @@ const RouteGuard = ({ component: Component, fullRoutePath }: RouteGuardProps) =>
     );
   }
 
-  if (loginRequired && !user) {
+  if (!user) {
     return <Navigate to='/login' />;
   }
 
-  if (user?.mustChangePassword) {
+  if (user.mustChangePassword) {
     return <Navigate to='/login' />;
   }
 
-  if (adminOnly && !user?.admin) {
+  if (adminOnly && !user.admin) {
     return <Navigate to='/not-authorized' />;
   }
 

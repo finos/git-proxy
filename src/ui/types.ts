@@ -76,6 +76,7 @@ export interface Route {
   rtlName?: string;
   component: React.ComponentType;
   visible?: boolean;
+  adminOnly?: boolean;
 }
 
 export interface SCMRepositoryMetadata {
