@@ -573,6 +573,69 @@ describe('proxy chain', function () {
 
       expect(dbSpy).not.toHaveBeenCalled();
     });
+
+    describe('plugins that run after a pre-receive auto-approval', () => {
+      const afterDiffPlugin = (exec: (req: any, action: any) => Promise<any>) => {
+        chain.chainPluginLoader = {
+          pushPlugins: [
+            {
+              exec,
+              phase: PushPhase.AFTER_DIFF,
+              displayName: 'externalServicePlugin',
+              isCollectible: true,
+            },
+          ],
+          pullPlugins: [],
+        };
+      };
+
+      beforeEach(() => {
+        mockPushProcessors.preReceive.mockImplementation(async (req: any, action: any) => {
+          action.autoApproved = true;
+          return action;
+        });
+      });
+
+      it('should not auto-approve a push whose AFTER_DIFF plugin failed', async () => {
+        setupPushAction();
+        afterDiffPlugin(failStep('Client disconnected before the DLP scan completed'));
+        const dbSpy = vi.spyOn(db, 'authorise');
+
+        const result = await chain.executeChain({});
+
+        expect(mockPushProcessors.preReceive).toHaveBeenCalled();
+        expect(result.error).toBe(true);
+        expect(result.errorMessage).toBeUndefined(); // single failure keeps its step message
+        expect(result.steps[0].errorMessage).toBe(
+          'Client disconnected before the DLP scan completed',
+        );
+        expect(mockPushProcessors.blockForAuth).not.toHaveBeenCalled();
+        expect(dbSpy).not.toHaveBeenCalled();
+      });
+
+      it('should still run the remaining collectible checks after the plugin failed', async () => {
+        setupPushAction();
+        afterDiffPlugin(failStep('DLP scan blocked push: Contains sensitive data'));
+        mockPushProcessors.scanDiff.mockImplementation(failStep('secret detected in diff'));
+
+        const result = await chain.executeChain({});
+
+        expect(mockPushProcessors.gitleaks).toHaveBeenCalled();
+        expect(result.errorMessage).toContain('The following 2 checks failed:');
+        expect(result.errorMessage).toContain('Contains sensitive data');
+      });
+
+      it('should auto-approve when the AFTER_DIFF plugin passed', async () => {
+        setupPushAction();
+        afterDiffPlugin(async (req: any, action: any) => action);
+        const dbSpy = vi.spyOn(db, 'authorise');
+
+        await chain.executeChain({});
+
+        expect(mockPushProcessors.blockForAuth).toHaveBeenCalled();
+        expect(dbSpy).toHaveBeenCalledOnce();
+      });
+    });
   });
 
   it('returns pullActionChain for pull actions', async () => {

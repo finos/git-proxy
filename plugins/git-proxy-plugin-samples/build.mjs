@@ -38,6 +38,7 @@ for (const entry of entries) {
       target: ts.ScriptTarget.ES2022,
       module: ts.ModuleKind.ESNext,
       verbatimModuleSyntax: true,
+      rewriteRelativeImportExtensions: true,
     },
   });
 

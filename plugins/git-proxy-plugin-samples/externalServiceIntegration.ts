@@ -20,11 +20,11 @@
  * service with any other asynchronous service.
  */
 
-import { type Request } from 'express';
+import type { Request } from 'express';
 
 import { PushActionPlugin, PushPhase, type PushPluginOptions } from '@finos/git-proxy/plugin';
 import { Step, type Action } from '@finos/git-proxy/proxy/actions';
-import { acknowledgeScan, submitScan, type DlpScan, type Verdict } from './mockDlpService.js';
+import { acknowledgeScan, submitScan, type DlpScan, type Verdict } from './mockDlpService.ts';
 
 const TIMEOUT_MS = 5 * 60 * 1000;
 const DISCONNECT_POLL_MS = 1000;
