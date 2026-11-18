@@ -15,44 +15,23 @@
  */
 
 import { spawnSync } from 'node:child_process';
-import { cpSync, mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 
-const repoRoot = join(__dirname, '../..');
-const samplesRoot = join(repoRoot, 'plugins/git-proxy-plugin-samples');
-const documentedSpecifier = '@finos/git-proxy-plugin-samples/customSecretScanner';
+import { buildSamples, createSampleApp, createStandaloneDir } from './samplePackageHarness';
 
-const linkType = process.platform === 'win32' ? 'junction' : 'dir';
+const documentedSpecifier = '@finos/git-proxy-plugin-samples/customSecretScanner';
 
 describe('customSecretScanner sample package', () => {
   let appDir: string;
   let standaloneDir: string;
 
   beforeAll(() => {
-    const build = spawnSync('npm', ['run', 'build'], {
-      cwd: samplesRoot,
-      encoding: 'utf8',
-      shell: true,
-    });
-    if (build.status !== 0) {
-      throw new Error(`sample build failed\n${build.stdout}\n${build.stderr}`);
-    }
+    buildSamples();
 
-    appDir = mkdtempSync(join(tmpdir(), 'git-proxy-scanner-'));
-    const gitProxyBuild = compilePluginEntry(appDir);
-
-    const packageDir = join(appDir, 'node_modules/@finos/git-proxy-plugin-samples');
-    mkdirSync(packageDir, { recursive: true });
-    cpSync(join(samplesRoot, 'package.json'), join(packageDir, 'package.json'));
-    cpSync(join(samplesRoot, 'dist'), join(packageDir, 'dist'), { recursive: true });
-    symlinkSync(gitProxyBuild, join(appDir, 'node_modules/@finos/git-proxy'), linkType);
-    symlinkSync(
-      join(repoRoot, 'node_modules/parse-diff'),
-      join(appDir, 'node_modules/parse-diff'),
-      linkType,
-    );
+    let gitProxyBuild: string;
+    ({ appDir, gitProxyBuild } = createSampleApp('git-proxy-scanner-', ['parse-diff']));
 
     writeFileSync(
       join(appDir, 'load.mjs'),
@@ -74,17 +53,11 @@ console.log('loaded');
 `,
     );
 
-    standaloneDir = mkdtempSync(join(tmpdir(), 'git-proxy-scanner-ts-'));
-    cpSync(
-      join(samplesRoot, 'customSecretScanner.ts'),
-      join(standaloneDir, 'customSecretScanner.ts'),
-    );
-    mkdirSync(join(standaloneDir, 'node_modules/@finos'), { recursive: true });
-    symlinkSync(gitProxyBuild, join(standaloneDir, 'node_modules/@finos/git-proxy'), linkType);
-    symlinkSync(
-      join(repoRoot, 'node_modules/parse-diff'),
-      join(standaloneDir, 'node_modules/parse-diff'),
-      linkType,
+    standaloneDir = createStandaloneDir(
+      'git-proxy-scanner-ts-',
+      ['customSecretScanner.ts'],
+      gitProxyBuild,
+      ['parse-diff'],
     );
   }, 30000);
 
@@ -110,53 +83,3 @@ console.log('loaded');
     expect(result.status, result.stderr || result.stdout).toBe(0);
   });
 });
-
-function compilePluginEntry(appDir: string): string {
-  const outDir = join(appDir, 'git-proxy');
-  const tsconfigPath = join(appDir, 'tsconfig.json');
-  writeFileSync(
-    tsconfigPath,
-    JSON.stringify({
-      compilerOptions: {
-        target: 'ES6',
-        lib: ['DOM', 'ESNext'],
-        jsx: 'react-jsx',
-        module: 'NodeNext',
-        moduleResolution: 'NodeNext',
-        strict: true,
-        skipLibCheck: true,
-        esModuleInterop: true,
-        allowSyntheticDefaultImports: true,
-        resolveJsonModule: true,
-        outDir,
-        rootDir: repoRoot,
-        declaration: false,
-        types: ['node', 'react'],
-        typeRoots: [join(repoRoot, 'node_modules/@types')],
-      },
-      files: [join(repoRoot, 'src/plugin.ts')],
-    }),
-  );
-
-  const tsc = spawnSync(
-    process.execPath,
-    [join(repoRoot, 'node_modules/typescript/bin/tsc'), '-p', tsconfigPath],
-    { cwd: repoRoot, encoding: 'utf8' },
-  );
-  if (tsc.status !== 0) {
-    throw new Error(`plugin compile failed\n${tsc.stdout}\n${tsc.stderr}`);
-  }
-
-  writeFileSync(
-    join(outDir, 'package.json'),
-    JSON.stringify({
-      name: '@finos/git-proxy',
-      exports: {
-        './plugin': './src/plugin.js',
-        './proxy/actions': './src/proxy/actions/index.js',
-      },
-    }),
-  );
-  symlinkSync(join(repoRoot, 'node_modules'), join(outDir, 'node_modules'), linkType);
-  return outDir;
-}
