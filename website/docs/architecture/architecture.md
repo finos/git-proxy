@@ -640,17 +640,17 @@ Currently unused.
 
 #### `apiAuthentication`
 
-Allows defining ways to authenticate to the API. This is useful for securing custom/automated solutions that rely on the GitProxy API, as well as adding an extra layer of security for the UI.
+Allows defining ways to authenticate to the API for automation and clients other than browsers such as CI, scripts and integrations.
 
-If `apiAuthentication` is left empty, API endpoints will be publicly accesible.
+If `apiAuthentication` is left empty, API endpoints will be publicly accessible.
 
-Currently, only JWT auth is supported. This is implemented via the [`jwtAuthHandler` middleware](https://github.com/finos/git-proxy/blob/main/src/service/passport/jwtAuthHandler.ts). Aside of validating incoming access tokens, it can also assign roles based on the token payload.
+Currently, only JWT auth is supported. This is implemented via the [`jwtAuthHandler` middleware](https://github.com/finos/git-proxy/blob/main/src/service/passport/jwtAuthHandler.ts). Aside from validating incoming access tokens, it can also assign roles based on the token payload.
 
 ##### Setting up JWT Authentication
 
-When JWT authentication is enabled, all requests to the API must provide a valid JWT access token in the UI. This can be set in the settings tab.
+When JWT authentication is enabled, API clients that are not already authenticated via a session must provide a valid JWT access token in the `Authorization: Bearer <token>` header.
 
-If no token, or an invalid/expired token is sent, requests will fail with a `401` Unauthorized response.
+If no token, or an invalid/expired token is sent (and there is no valid session), requests will fail with a `401` Unauthorized response.
 
 The JWT auth configuration looks like this:
 
@@ -695,14 +695,14 @@ For example, to assign `req.admin` to users whose name matches "John Doe":
 
 ##### Errors
 
-If JWT authentication is enabled, requests may fail for various reasons, including:
+If JWT authentication is enabled, non-session API requests may fail for various reasons, including:
 
-- Missing JWT token (must set token in UI Settings page)
+- Missing JWT token (send `Authorization: Bearer <token>` from API clients)
 - Invalid or expired token
 - Mismatched issuer or audience
 - Missing required configuration in `proxy.config.json`
 
-To solve most of these, check that GitProxy's JWT configuration is correct, and that the user has set a valid JWT in the UI Settings page.
+To solve most of these, check that GitProxy's JWT configuration is correct and that API clients send a valid Bearer token. Logged-in UI sessions do not require a JWT.
 
 #### `tls`
 
@@ -761,32 +761,6 @@ Sample values:
   ]
 },
 ```
-
-#### `uiRouteAuth`
-
-Allows defining which UI routes require authentication to access. Rules are set through URL patterns, and can be set to require a logged-in user or an admin to access.
-
-If the default values are set to `enabled: true`, any routes matching `/dashboard/*` will require login, and any routes matching `/admin/*` will require a logged-in admin user:
-
-```json
-"uiRouteAuth": {
-  "enabled": true,
-  "rules": [
-    {
-      "pattern": "/dashboard/*",
-      "adminOnly": false,
-      "loginRequired": true
-    },
-    {
-      "pattern": "/admin/*",
-      "adminOnly": true,
-      "loginRequired": true
-    }
-  ]
-}
-```
-
-When the constraints are not met, the user will be redirected to the login page or a 401 Unauthorized page will be shown.
 
 ## Suggestions?
 

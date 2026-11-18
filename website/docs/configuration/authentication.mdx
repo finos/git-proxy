@@ -81,7 +81,7 @@ You will need an existing OIDC setup to release valid JWT tokens.
 
 **Warning: GitProxy does not provide/release JWT tokens for API validation.** Your service (configured through `jwtConfig`) will have to do this on its own. For example, it could be an app that allows users to log in through Google, and releases a JWT `access_token` with a one hour expiry date.
 
-If the `jwt` auth method is enabled in the config, you'll notice that UI requests are no longer working. This is expected since the endpoints require a valid JWT to proceed. Once the `Bearer: <your-JWT>` authorization header is added, you should be able to access the endpoints as usual.
+If the `jwt` auth method is enabled in the config, API clients (or anything other than a browser) must send an `Authorization: Bearer <jwt-token-here>` header. Logged-in UI users continue to work via session cookiesso a bearer JWT is unneeded.
 
 ##### JWT Role Mapping
 
