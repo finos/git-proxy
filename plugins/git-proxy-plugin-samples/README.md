@@ -75,14 +75,14 @@ In this example, we're using a mock Data Loss Prevention (DLP) service.
 
 Note that `ExternalServiceIntegration` runs in the `AFTER_DIFF` phase of the branch push chain.
 
-### Try it out 
+### Try it out
 
 1. Run `npm run build` in this directory and install the package next to GitProxy (see the [plugin documentation](https://git-proxy.finos.org/docs/development/plugins)).
 2. Add the plugin to `proxy.config.json`:
 
 ```json
 {
-   "plugins": ["@finos/git-proxy-plugin-samples/externalServiceIntegration"]
+  "plugins": ["@finos/git-proxy-plugin-samples/externalServiceIntegration"]
 }
 ```
 
