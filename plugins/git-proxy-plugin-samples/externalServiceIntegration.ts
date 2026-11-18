@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-/** 
+/**
  * This sample demonstrates how GitProxy holds the push until an
  * external service has completed. You can replace the mock DLP
  * service with any other asynchronous service.
@@ -22,15 +22,15 @@
 
 import { type Request } from 'express';
 
-import { PushActionPlugin, PushPhase,type PushPluginOptions } from '@finos/git-proxy/plugin'
+import { PushActionPlugin, PushPhase, type PushPluginOptions } from '@finos/git-proxy/plugin';
 import { Step, type Action } from '@finos/git-proxy/proxy/actions';
-import { isClientDisconnected } from '@finos/git-proxy/proxy/chain';
-import { acknowledgeScan, submitScan, type DlpScan, type Verdict } from './mockDlpService';
+import { acknowledgeScan, submitScan, type DlpScan, type Verdict } from './mockDlpService.js';
 
 const TIMEOUT_MS = 5 * 60 * 1000;
 const DISCONNECT_POLL_MS = 1000;
 
-type ServiceResult = { status: 'completed'; verdict: Verdict } | { status: 'timeout' } | { status: 'disconnected' };
+type ServiceResult =
+  { status: 'completed'; verdict: Verdict } | { status: 'timeout' } | { status: 'disconnected' };
 
 type ProxiedRequest = Request & { isSSH?: boolean; sshClient?: { disconnected?: boolean } };
 
@@ -39,7 +39,7 @@ const pluginOptions: PushPluginOptions = {
   displayName: 'ExternalServiceIntegration',
   isCollectible: true,
   chains: ['branch'],
-}
+};
 
 class ExternalServiceIntegration extends PushActionPlugin {
   constructor() {
@@ -49,7 +49,7 @@ class ExternalServiceIntegration extends PushActionPlugin {
 
 async function exec(req: Request, action: Action) {
   const step = new Step('ExternalServiceIntegration');
-  const diff = action.diff ?? action.steps.find(s => s.stepName === 'diff')?.content;
+  const diff = action.diff ?? action.steps.find((s) => s.stepName === 'diff')?.content;
 
   if (typeof diff !== 'string' || !diff) {
     step.log('No diff found. Submitting empty diff to DLP service.');
@@ -57,35 +57,42 @@ async function exec(req: Request, action: Action) {
 
   const diffBytes = typeof diff === 'string' ? Buffer.byteLength(diff) : 0;
   const { scan, reattached } = submitScan(action.id, diffBytes);
-  
+
   step.log(
     reattached
-    ? `Reattached to existing DLP scan ${scan.id}`
-    : `Submitted DLP scan ${scan.id}, ${diffBytes} bytes`);
+      ? `Reattached to existing DLP scan ${scan.id}`
+      : `Submitted DLP scan ${scan.id}, ${diffBytes} bytes`,
+  );
 
   const startedWaitingAt = Date.now();
-  const result = await waitForResult(req as ProxiedRequest, scan, timeoutMs);
+  const result = await waitForResult(req as ProxiedRequest, scan, TIMEOUT_MS);
 
   switch (result.status) {
-    case 'completed':
+    case 'completed': {
       acknowledgeScan(action.id, scan);
-      const now = Date.now();
-      const elapsedMs = now - startedWaitingAt;
+      const elapsedMs = Date.now() - startedWaitingAt;
       if (result.verdict.approved) {
         trace(`Push accepted after ${elapsedMs}ms`);
         step.log(`DLP scan approved push ${action.id} after ${elapsedMs}ms`);
       } else {
         trace(`Push rejected after ${elapsedMs}ms: ${result.verdict.reason}`);
-        step.log(`DLP scan blocked push ${action.id} after ${elapsedMs}ms: ${result.verdict.reason}`);
+        step.setError(
+          `DLP scan blocked push ${action.id} after ${elapsedMs}ms: ${result.verdict.reason}`,
+        );
       }
       break;
+    }
     case 'timeout':
       trace(`DLP scan ${scan.id} for push ${action.id} still running after ${TIMEOUT_MS}ms`);
-      step.setError(`DLP scan ${scan.id} for push ${action.id} still running after ${TIMEOUT_MS}ms. Run "git push" again to check the result.`);
+      step.setError(
+        `DLP scan ${scan.id} for push ${action.id} still running after ${TIMEOUT_MS}ms. Run "git push" again to check the result.`,
+      );
       break;
     case 'disconnected':
       trace(`Client disconnected while waiting on scan ${scan.id} for push ${action.id}`);
-      step.log(`Client disconnected while waiting for DLP to complete.`);
+      step.setError(
+        'Client disconnected before the DLP scan completed. Run "git push" again to check the result.',
+      );
       break;
   }
 
@@ -104,12 +111,14 @@ async function waitForResult(
 ): Promise<ServiceResult> {
   let timeoutTimer: ReturnType<typeof setTimeout> | undefined;
   let disconnectPoll: ReturnType<typeof setInterval> | undefined;
-  
+
   try {
     return await Promise.race<ServiceResult>([
-      scan.result.then((verdict) => { return { status: 'completed', verdict } }),
+      scan.result.then((verdict) => {
+        return { status: 'completed', verdict };
+      }),
       new Promise((resolve) => {
-        timeoutTimer = setTimeout(() => resolve({ status: 'timeout'}), timeoutMs)
+        timeoutTimer = setTimeout(() => resolve({ status: 'timeout' }), timeoutMs);
       }),
       new Promise((resolve) => {
         disconnectPoll = setInterval(() => {
@@ -118,7 +127,7 @@ async function waitForResult(
           }
         }, DISCONNECT_POLL_MS);
       }),
-    ])
+    ]);
   } finally {
     clearTimeout(timeoutTimer);
     clearInterval(disconnectPoll);
@@ -127,3 +136,5 @@ async function waitForResult(
 
 const trace = (message: string) =>
   console.log(`[ExternalServiceIntegration] ${new Date().toISOString()} ${message}`);
+
+export default new ExternalServiceIntegration();
