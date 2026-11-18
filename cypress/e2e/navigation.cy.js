@@ -30,7 +30,6 @@ describe('Navigation & Shell', () => {
     cy.get('[data-testid="dashboard-nav-desktop-repositories"]').should('be.visible');
     cy.get('[data-testid="dashboard-nav-desktop-activity"]').should('be.visible');
     cy.get('[data-testid="dashboard-nav-desktop-users"]').should('be.visible');
-    cy.get('[data-testid="dashboard-header-settings"]').should('be.visible');
   });
 
   it('Navbar links navigate correctly', () => {
@@ -41,9 +40,6 @@ describe('Navigation & Shell', () => {
 
     cy.get('[data-testid="dashboard-nav-desktop-users"]').click();
     cy.url().should('include', '/dashboard/admin/user');
-
-    cy.get('[data-testid="dashboard-header-settings"]').click();
-    cy.url().should('include', '/dashboard/admin/settings');
 
     cy.get('[data-testid="dashboard-nav-desktop-repositories"]').click();
     cy.url().should('include', '/dashboard/repo');
@@ -78,10 +74,15 @@ describe('Navigation & Shell', () => {
 });
 
 describe('Unauthenticated access', () => {
-  it('Unauthenticated user is redirected to /login from the profile page', () => {
+  it('Unauthenticated user is redirected to /login from dashboard pages', () => {
     cy.logout();
     cy.visit('/dashboard/profile');
+    cy.url().should('include', '/login');
 
+    cy.visit('/dashboard/repo');
+    cy.url().should('include', '/login');
+
+    cy.visit('/dashboard/admin/user');
     cy.url().should('include', '/login');
   });
 });

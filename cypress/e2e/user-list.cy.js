@@ -69,10 +69,18 @@ describe('User List (Admin)', () => {
     cy.get('[data-testid="profile-name"]').should('contain', listedUser.username);
   });
 
-  it('Non-admin access follows the configured route rules', () => {
+  it('Non-admin users are redirected to /not-authorized', () => {
     cy.login(listedUser.username, listedUser.password);
     cy.visit('/dashboard/admin/user');
 
-    cy.url().should('match', /\/(dashboard\/admin\/user|not-authorized|login)/);
+    cy.url().should('include', '/not-authorized');
+  });
+
+  it('Non-admin users do not see the Users nav link', () => {
+    cy.login(listedUser.username, listedUser.password);
+    cy.visit('/dashboard/repo');
+
+    cy.get('[data-testid="dashboard-nav-desktop-repositories"]').should('be.visible');
+    cy.get('[data-testid="dashboard-nav-desktop-users"]').should('not.exist');
   });
 });

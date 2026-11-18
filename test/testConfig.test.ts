@@ -55,7 +55,6 @@ describe('default configuration', () => {
       defaultSettings.apiAuthentication.filter((method) => method.enabled),
     );
     expect(config.getPrivateOrganizations()).toEqual(defaultSettings.privateOrganizations);
-    expect(config.getUIRouteAuth()).toEqual(defaultSettings.uiRouteAuth);
     expect(config.getMaxPackExpansionRatio()).toBe(defaultSettings.limits.maxPackExpansionRatio);
     expect(config.getMaxPackObjects()).toBe(defaultSettings.limits.maxPackObjects);
   });
@@ -316,7 +315,6 @@ describe('user configuration', () => {
     expect(config.getCommitConfig()).toEqual(defaultSettings.commitConfig);
     expect(config.getAttestationConfig()).toEqual(defaultSettings.attestationConfig);
     expect(config.getPrivateOrganizations()).toEqual(defaultSettings.privateOrganizations);
-    expect(config.getUIRouteAuth()).toEqual(defaultSettings.uiRouteAuth);
   });
 
   it('should override default settings for cookieSecret if env var is used', async () => {
@@ -682,7 +680,6 @@ describe('user configuration', () => {
     expect(() => config.getSessionMaxAgeHours()).not.toThrow();
     expect(() => config.getCommitConfig()).not.toThrow();
     expect(() => config.getPrivateOrganizations()).not.toThrow();
-    expect(() => config.getUIRouteAuth()).not.toThrow();
   });
 
   it('should test getAuthentication function returns first auth method', async () => {

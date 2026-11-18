@@ -31,7 +31,6 @@ describe('Config API', () => {
     vi.spyOn(config, 'getAttestationConfig').mockReturnValue({ questions: [] });
     vi.spyOn(config, 'getURLShortener').mockReturnValue('https://url-shortener.com');
     vi.spyOn(config, 'getContactEmail').mockReturnValue('test@example.com');
-    vi.spyOn(config, 'getUIRouteAuth').mockReturnValue({ enabled: false, rules: [] });
   });
 
   afterEach(() => {
@@ -54,11 +53,5 @@ describe('Config API', () => {
     const res = await request(app).get('/config/contactEmail');
     expect(res.status).toBe(200);
     expect(res.text).toBe('test@example.com');
-  });
-
-  it('GET /config/uiRouteAuth should return 200 OK and the default ui route auth config', async () => {
-    const res = await request(app).get('/config/uiRouteAuth');
-    expect(res.status).toBe(200);
-    expect(res.body).toEqual({ enabled: false, rules: [] });
   });
 });
