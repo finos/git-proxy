@@ -451,30 +451,17 @@ describe('ConfigLoader', () => {
   });
 
   describe('loadRemoteConfig', () => {
+    // CI must serve proxy.config.json from own branch instead of fetching upstream
+    // to prevent failures on removed schema keys
+    const defaultConfigPath = path.join(__dirname, '..', 'proxy.config.json');
+
     beforeEach(async () => {
-      const configFilePath = path.join(__dirname, '..', 'proxy.config.json');
-      const config = JSON.parse(fs.readFileSync(configFilePath, 'utf-8'));
+      const config = JSON.parse(fs.readFileSync(defaultConfigPath, 'utf-8'));
 
       config.configurationSources.enabled = true;
       configLoader = new ConfigLoader(config);
       await configLoader.initialize();
     });
-
-    it('should load configuration from git repository', async function () {
-      const source: GitSource = {
-        type: 'git',
-        repository: 'https://github.com/finos/git-proxy.git',
-        path: 'proxy.config.json',
-        branch: 'main',
-        enabled: true,
-      };
-
-      const config = await configLoader.loadFromSource(source);
-
-      // Verify the loaded config has expected structure
-      expect(config).toBeTypeOf('object');
-      expect(config).toHaveProperty('cookieSecret');
-    }, 10000);
 
     describe('cached git sources', () => {
       let source: GitSource;
@@ -555,6 +542,18 @@ describe('ConfigLoader', () => {
       afterEach(() => {
         fs.rmSync(repoDir, { recursive: true, force: true });
         vi.unstubAllEnvs();
+      });
+
+      it('should load configuration from git repository', async () => {
+        fs.copyFileSync(defaultConfigPath, path.join(workDir, source.path));
+        await execFileAsync('git', ['commit', '-am', 'default config'], { cwd: workDir });
+        await execFileAsync('git', ['push', 'origin', 'main'], { cwd: workDir });
+        fs.rmSync(repoDir, { recursive: true });
+
+        const config = await configLoader.loadFromSource(source);
+
+        expect(config).toBeTypeOf('object');
+        expect(config).toHaveProperty('cookieSecret');
       });
 
       it('loads PostgreSQL settings from a fresh clone', async () => {
@@ -764,6 +763,9 @@ describe('ConfigLoader', () => {
         url: 'https://raw.githubusercontent.com/finos/git-proxy/refs/heads/main/proxy.config.json',
         enabled: true,
       };
+      vi.spyOn(axios, 'get').mockResolvedValue({
+        data: fs.readFileSync(defaultConfigPath, 'utf-8'),
+      });
 
       const config = await configLoader.loadFromSource(source);
 
