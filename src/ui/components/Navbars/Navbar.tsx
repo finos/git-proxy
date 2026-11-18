@@ -14,14 +14,13 @@
  * limitations under the License.
  */
 
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { NavLink } from 'react-router';
-import { IconButton } from '@primer/react';
-import { SlidersIcon } from '@primer/octicons-react';
 import { Disclosure, DisclosureButton, DisclosurePanel } from '@headlessui/react';
 import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline';
 import clsx from 'clsx';
 import DashboardUserMenu from './DashboardUserMenu';
+import { UserContext } from '../../context';
 import { Route } from '../../types';
 
 interface HeaderProps {
@@ -64,7 +63,10 @@ function logoDisplayFromIntrinsic(
 }
 
 const Header = ({ routes, logo, logoAlt = 'GitProxy' }: HeaderProps) => {
-  const visible = routes.filter((r) => r.layout === '/dashboard' && r.visible);
+  const { user } = useContext(UserContext);
+  const visible = routes.filter(
+    (r) => r.layout === '/dashboard' && r.visible && (!r.adminOnly || user?.admin),
+  );
   const [logoPx, setLogoPx] = useState<{ width: number; height: number } | null>(null);
   const logoImgRef = useRef<HTMLImageElement>(null);
 
@@ -163,23 +165,6 @@ const Header = ({ routes, logo, logoAlt = 'GitProxy' }: HeaderProps) => {
                 </div>
 
                 <div className='absolute inset-y-0 right-0 flex items-center pr-2 sm:static sm:inset-auto sm:ml-6 sm:pr-0'>
-                  <div className='hidden sm:contents'>
-                    <IconButton
-                      icon={SlidersIcon}
-                      variant='invisible'
-                      size='medium'
-                      aria-label='Settings'
-                      data-testid='dashboard-header-settings'
-                      data-header-settings
-                      {...({
-                        as: NavLink,
-                        to: '/dashboard/admin/settings',
-                        end: true,
-                      } as Record<string, unknown>)}
-                      className='relative rounded-full p-1 focus:outline-2 focus:-outline-offset-2 focus:outline-white/60'
-                      style={{ color: 'rgba(240, 246, 252, 0.82)' }}
-                    />
-                  </div>
                   <div className='relative ml-3'>
                     <DashboardUserMenu />
                   </div>
@@ -210,25 +195,6 @@ const Header = ({ routes, logo, logoAlt = 'GitProxy' }: HeaderProps) => {
                     {item.name}
                   </NavLink>
                 ))}
-                <NavLink
-                  data-testid='dashboard-nav-mobile-settings'
-                  to='/dashboard/admin/settings'
-                  end
-                  onClick={() => close()}
-                  className={({ isActive }) =>
-                    clsx(
-                      mobileMenuLinkBase,
-                      isActive
-                        ? 'gitproxy-navbar-link--active bg-white/15'
-                        : 'hover:bg-white/[0.08]',
-                    )
-                  }
-                  style={({ isActive }) => ({
-                    color: isActive ? 'rgb(255, 255, 255)' : 'rgba(240, 246, 252, 0.82)',
-                  })}
-                >
-                  Settings
-                </NavLink>
               </div>
             </DisclosurePanel>
           </>
