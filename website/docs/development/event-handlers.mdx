@@ -1,0 +1,186 @@
+---
+title: Event Handlers
+---
+
+## What event handlers are
+
+Event handlers let external code **observe** GitProxy's lifecycle without sitting
+in the request path. Whenever a `push` or `pull` reaches a meaningful point in
+its lifecycle - it started, completed, was blocked for review, errored, or was
+denied - GitProxy dispatches an event. Handlers react to those events to emit
+metrics, send notifications, or write to an external audit log.
+
+Like [plugins](./plugins), handlers are loaded at startup from
+[configuration](/docs/category/configuration) as NPM packages or JavaScript
+files on disk, and they are resolved as standard
+[Node modules](https://nodejs.org/api/modules.html) via the same
+[load-plugin](https://www.npmjs.com/package/load-plugin) mechanism.
+
+## Event handlers vs. plugins
+
+Event handlers and chain plugins look superficially similar - both are modules
+you list in `proxy.config.json`, and both let you run your own code in response
+to Git activity. They serve very different purposes, though, and choosing the
+wrong one is the most common mistake.
+
+| | **Chain plugin** | **Event handler** |
+| --- | --- | --- |
+| Role | **Actor** in the action chain | **Observer** of the action chain |
+| Can block / modify / reject a push? | ✅ Yes | ❌ No |
+| Runs on the request path? | ✅ Yes - it delays the response | ❌ No - runs off the request path |
+| If it throws / is slow | The Git operation can fail or hang | The Git operation is unaffected |
+| Execution | Sequential, ordered, awaited | Asynchronous, fire-and-forget |
+| Use for | Policy, validation, transformation | Metrics, notifications, audit logs |
+
+:::tip Rule of thumb
+If your code needs to **decide** something about a Git operation - allow it,
+block it, change it - write a [chain plugin](./plugins). If your code only needs
+to **know** that something happened, write an event handler.
+:::
+
+Because handlers are observers only, they **cannot** block, modify or reject a
+Git operation. For any blocking or policy logic, write a chain plugin instead.
+
+## Execution model
+
+Understanding how handlers run is what lets you treat them as safe, drop-in
+observers:
+
+- **Off the request path.** Dispatching is synchronous and returns immediately;
+  handlers run on the event loop afterwards. A handler never delays a push or
+  pull.
+- **Fire-and-forget.** Handlers are invoked without being awaited by the request.
+  Both synchronous functions and ones returning a `Promise` are supported.
+- **Errors are contained.** An error thrown by a handler (or a rejected promise)
+  is caught and logged. It never propagates to the Git response and never affects
+  other handlers.
+- **Drained on shutdown.** On `Proxy.stop()`, in-flight handlers are given a
+  bounded window to finish; any still running past the timeout are abandoned with
+  a warning.
+
+## Lifecycle phases
+
+Handlers subscribe per **operation** (`push` or `pull`) and per **phase**.
+`pull` covers all `git-upload-pack` operations (fetch / clone / pull); GitProxy
+does not distinguish them.
+
+| Phase | When it fires |
+| --- | --- |
+| `started` | The chain is about to run. User identity may not be resolved yet. |
+| `completed` | The chain finished at a resolved outcome - approved (`allowPush`) or auto-approved / auto-rejected by the system. |
+| `pendingReview` | The chain finished and the push was blocked awaiting manual approval. It now sits in the approval queue. This is not a denial or an error. |
+| `error` | An unhandled exception or step error aborted the chain. |
+| `permissionDenied` | The user lacks push permission for the repository. |
+
+## The handler API
+
+A handler module exports one or more `EventHandlerPlugin` instances. Each
+instance is constructed with a `register` function that receives a registry. You
+subscribe by calling `onPush()` / `onPull()` to get a builder, then chaining the
+per-phase methods:
+
+```js
+import { EventHandlerPlugin } from '@finos/git-proxy/eventHandlers';
+
+export const notifier = new EventHandlerPlugin((registry) => {
+  registry
+    .onPush()
+    .onPendingReview((details) => {
+      console.log(`Push ${details.actionId} on ${details.repository.url} awaits review`);
+    })
+    .onError((details) => {
+      console.error(`Push ${details.actionId} failed: ${details.error?.message}`);
+    });
+});
+```
+
+Every handler is called with an `EventDetails` object:
+
+```ts
+interface EventDetails {
+  actionId: string;       // unique id of the action
+  operation: 'push' | 'pull';
+  phase: 'started' | 'completed' | 'pendingReview' | 'error' | 'permissionDenied';
+  timestamp: number;      // epoch milliseconds
+  repository: { url: string; project: string; name: string };
+  user?: { username?: string; email?: string }; // absent if identity unresolved
+  error?: Error;          // present on the `error` phase
+}
+```
+
+## Worked example: the built-in console logger
+
+GitProxy ships with one built-in handler, `consoleLogger`, that emits a
+structured JSON line for every lifecycle event. It is a complete, real example
+of everything above - subscribing to both operations across all phases, and
+keeping the handler body trivial because it runs off the request path:
+
+```ts
+import { EventHandlerPlugin } from '@finos/git-proxy/eventHandlers';
+import { ActionPhase, EventDetails, IProxyEventRegistry, ProxyOperation } from '@finos/git-proxy/eventHandlers';
+
+// Shape the event into a single structured log line. Keep handler work cheap -
+// it runs fire-and-forget, but slow handlers still consume the event loop.
+const formatLine = (details: EventDetails): string => {
+  const payload: Record<string, unknown> = {
+    event: 'gitproxy.action',
+    actionId: details.actionId,
+    operation: details.operation,
+    phase: details.phase,
+    timestamp: new Date(details.timestamp).toISOString(),
+    repo: details.repository.url,
+  };
+  if (details.user?.username) payload.username = details.user.username;
+  if (details.user?.email) payload.userEmail = details.user.email;
+  if (details.error) payload.error = details.error.message;
+  return JSON.stringify(payload);
+};
+
+const log = (details: EventDetails): void => {
+  console.info(formatLine(details));
+};
+
+const phases: ActionPhase[] = ['started', 'completed', 'pendingReview', 'error', 'permissionDenied'];
+const operations: ProxyOperation[] = ['push', 'pull'];
+
+export const consoleLoggerEventHandler = new EventHandlerPlugin(function registerConsoleLogger(
+  registry: IProxyEventRegistry,
+) {
+  for (const op of operations) {
+    const builder = op === 'push' ? registry.onPush() : registry.onPull();
+    for (const phase of phases) {
+      if (phase === 'started') builder.onStarted(log);
+      else if (phase === 'completed') builder.onCompleted(log);
+      else if (phase === 'pendingReview') builder.onPendingReview(log);
+      else if (phase === 'error') builder.onError(log);
+      else if (phase === 'permissionDenied') builder.onPermissionDenied(log);
+    }
+  }
+});
+```
+
+A single event then looks like:
+
+```json
+{"event":"gitproxy.action","actionId":"1700000000000-abc","operation":"push","phase":"pendingReview","timestamp":"2026-06-16T12:00:00.000Z","repo":"https://github.com/my-org/my-repo.git","username":"alice"}
+```
+
+## Configuring your handlers
+
+List your handler modules under the `eventHandlers` key in `proxy.config.json`.
+Each value is a file path or a module name, resolved exactly like
+[`plugins`](./plugins):
+
+```json
+{
+  "eventHandlers": [
+    "./my-event-handler.js",
+    "@my-org/gitproxy-notifier"
+  ]
+}
+```
+
+For packaging a handler as a distributable module - peer dependencies, local
+file loading, `npm pack` - follow the same steps as the
+[plugin guide](./plugins); event handler modules are loaded with the same
+machinery.
