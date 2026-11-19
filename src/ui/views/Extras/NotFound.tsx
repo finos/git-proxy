@@ -23,7 +23,10 @@ const NotFound = () => {
   const navigate = useNavigate();
 
   return (
-    <div className='flex min-h-[50vh] flex-col items-center justify-center px-4 py-12'>
+    <div
+      className='flex min-h-[50vh] flex-col items-center justify-center px-4 py-12'
+      data-testid='not-found-page'
+    >
       <Stack
         direction='vertical'
         gap='normal'

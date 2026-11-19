@@ -15,6 +15,7 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { Action, RequestType, Step } from '../../../src/proxy/actions';
 
 const mockQuery = vi.fn();
 
@@ -70,7 +71,7 @@ describe('PostgreSQL - Pushes', async () => {
       await getPushes({ id: 'x' } as never);
 
       const [sql, params] = mockQuery.mock.calls[0];
-      expect(sql).not.toContain('WHERE');
+      expect(sql).toMatch(/FROM pushes\s+ORDER BY timestamp DESC$/);
       expect(params).toEqual([]);
     });
   });
@@ -83,6 +84,27 @@ describe('PostgreSQL - Pushes', async () => {
   });
 
   describe('writeAudit', () => {
+    it('compacts the final step and restores it on detail reads', async () => {
+      const action = new Action(
+        'compact',
+        RequestType.PUSH,
+        'POST',
+        123,
+        'https://example.com/a/b',
+      );
+      action.addStep(new Step('diff', false, null, false, null, 'reviewable diff'));
+      mockQuery.mockResolvedValue({ rowCount: 1, rows: [] });
+      await writeAudit(action);
+      const stored = JSON.parse(mockQuery.mock.calls[0][1][9]);
+      expect(stored).not.toHaveProperty('lastStep');
+      expect(stored._lastStepIndex).toBe(0);
+      mockQuery.mockResolvedValue({ rowCount: 1, rows: [{ data: stored }] });
+      const detail = await getPush(action.id);
+      expect(detail?.lastStep).toEqual(action.lastStep);
+      expect(detail).not.toHaveProperty('_lastStepIndex');
+      expect(action.lastStep?.content).toBe('reviewable diff');
+    });
+
     it('throws Invalid id when id is not a string', async () => {
       const action = { id: 42, timestamp: 1 } as unknown as Parameters<typeof writeAudit>[0];
       await expect(writeAudit(action)).rejects.toThrow('Invalid id');
@@ -222,7 +244,7 @@ describe('PostgreSQL - Pushes', async () => {
   });
 
   describe('list projection', () => {
-    it('drops steps and diff from list results but not from the detail view', async () => {
+    it('selects metadata fields in SQL while detail reads retain the entire document', async () => {
       mockQuery.mockResolvedValue({ rowCount: 0, rows: [] });
 
       await getPushes({});
@@ -232,11 +254,15 @@ describe('PostgreSQL - Pushes', async () => {
       const [listSql] = mockQuery.mock.calls[0];
       const [profileSql] = mockQuery.mock.calls[1];
       const [detailSql] = mockQuery.mock.calls[2];
-      // Both hold the full diff, so neither may reach a list response.
-      expect(listSql).toContain("data - 'steps' - 'diff'");
-      expect(profileSql).toContain("data - 'steps' - 'diff'");
-      expect(detailSql).not.toContain("data - 'steps'");
-      expect(detailSql).not.toContain("- 'diff'");
+      for (const sql of [listSql, profileSql]) {
+        expect(sql).toContain('jsonb_object_agg');
+        expect(sql).toContain("'tagData'");
+        expect(sql).toContain("'rejection'");
+        expect(sql).not.toContain("'steps'");
+        expect(sql).not.toContain("'lastStep'");
+        expect(sql).not.toContain("'diff'");
+      }
+      expect(detailSql).toBe('SELECT data FROM pushes WHERE id = $1');
     });
   });
 
@@ -249,7 +275,7 @@ describe('PostgreSQL - Pushes', async () => {
       const [sql, params] = mockQuery.mock.calls[0];
       expect(sql).toContain("data->'attestation'->'reviewer'->>'username'");
       expect(sql).toMatch(/ORDER BY timestamp DESC/);
-      expect(sql).not.toContain('userEmail');
+      expect(sql).not.toContain("(data->>'userEmail') = ANY");
       expect(params).toEqual(['Alice']);
     });
 
@@ -278,81 +304,25 @@ describe('PostgreSQL - Pushes', async () => {
   });
 
   describe('getRepoPushRollupsByCanonicalUrl', () => {
-    const row = (over: Record<string, unknown> = {}) => ({
-      url: 'https://github.com/finos/git-proxy.git',
-      error: false,
-      rejected: false,
-      canceled: false,
-      authorised: false,
-      blocked: true,
-      allow_push: false,
-      timestamp: 1000,
-      ...over,
-    });
-
-    it('only scans push rows', async () => {
-      mockQuery.mockResolvedValue({ rowCount: 0, rows: [] });
-
-      await getRepoPushRollupsByCanonicalUrl();
-
-      const [sql] = mockQuery.mock.calls[0];
-      expect(sql).toContain("WHERE type = 'push'");
-    });
-
-    it('counts pushes per canonical url and tracks the latest timestamps', async () => {
-      mockQuery.mockResolvedValue({
-        rowCount: 2,
-        rows: [row({ timestamp: 1000 }), row({ timestamp: 5000 })],
-      });
-
-      const { tabCounts, latestPushAtMs, latestPendingReviewAtMs } =
-        await getRepoPushRollupsByCanonicalUrl();
-
-      const [key] = [...tabCounts.keys()];
-      expect(tabCounts.get(key)?.pending).toBe(2);
-      expect(latestPushAtMs.get(key)).toBe(5000);
-      expect(latestPendingReviewAtMs.get(key)).toBe(5000);
-    });
-
-    it('separates approved pushes from pending ones', async () => {
-      mockQuery.mockResolvedValue({
-        rowCount: 2,
-        rows: [row(), row({ authorised: true, blocked: false, timestamp: 9000 })],
-      });
-
-      const { tabCounts, latestPendingReviewAtMs } = await getRepoPushRollupsByCanonicalUrl();
-      const [key] = [...tabCounts.keys()];
-
-      expect(tabCounts.get(key)?.pending).toBe(1);
-      expect(tabCounts.get(key)?.approved).toBe(1);
-      // the approved push must not advance the pending-review timestamp
-      expect(latestPendingReviewAtMs.get(key)).toBe(1000);
-    });
-
-    it('skips rows with an unusable url', async () => {
-      mockQuery.mockResolvedValue({ rowCount: 2, rows: [row({ url: null }), row({ url: '' })] });
-
-      const { tabCounts } = await getRepoPushRollupsByCanonicalUrl();
-
-      expect(tabCounts.size).toBe(0);
-    });
-
-    it('parses BIGINT timestamps returned as strings', async () => {
-      mockQuery.mockResolvedValue({ rowCount: 1, rows: [row({ timestamp: '4200' })] });
-
-      const { latestPushAtMs } = await getRepoPushRollupsByCanonicalUrl();
-      const [key] = [...latestPushAtMs.keys()];
-
-      expect(latestPushAtMs.get(key)).toBe(4200);
-    });
-
-    it('ignores non-numeric timestamps', async () => {
-      mockQuery.mockResolvedValue({ rowCount: 1, rows: [row({ timestamp: null })] });
-
-      const { tabCounts, latestPushAtMs } = await getRepoPushRollupsByCanonicalUrl();
-
-      expect(tabCounts.size).toBe(1);
-      expect(latestPushAtMs.size).toBe(0);
+    it('reads saved summaries without scanning unchanged push history', async () => {
+      mockQuery
+        .mockResolvedValueOnce({ rows: [] })
+        .mockResolvedValueOnce({ rows: [{ pending: false }] })
+        .mockResolvedValueOnce({
+          rows: [
+            {
+              key: 'example.com/a/b',
+              counts: { pending: 1, approved: 2, rejected: 0, canceled: 0, error: 0 },
+              latestPush: 200,
+              latestPending: 100,
+            },
+          ],
+        });
+      const result = await getRepoPushRollupsByCanonicalUrl();
+      expect(result.tabCounts.get('example.com/a/b')?.approved).toBe(2);
+      expect(result.latestPushAtMs.get('example.com/a/b')).toBe(200);
+      expect(result.latestPendingReviewAtMs.get('example.com/a/b')).toBe(100);
+      expect(mockQuery.mock.calls.some(([sql]) => /FROM pushes\b/.test(sql))).toBe(false);
     });
   });
 });

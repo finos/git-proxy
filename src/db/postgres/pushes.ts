@@ -14,17 +14,12 @@
  * limitations under the License.
  */
 
-import { activityPrimaryStatusFromFlags } from '../../activity/activityPrimaryStatus';
-import { canonicalRemoteUrl } from '../../activity/canonicalRemoteUrl';
 import { Action } from '../../proxy/actions';
 import { CompletedAttestation, Rejection } from '../../proxy/processors/types';
-import { toClass } from '../helper';
-import {
-  emptyRepoActivityTabCounts,
-  PushQuery,
-  RepoActivityTabCounts,
-  RepoPushRollupsByCanonicalUrl,
-} from '../types';
+import { pushListProjection } from '../pushProjection';
+import { compactPush, restorePush } from '../pushStorage';
+import { PushQuery } from '../types';
+export { getRepoPushRollupsByCanonicalUrl, rebuildRepoPushRollups } from './repoActivity';
 import { query, withTransaction } from './helper';
 
 const defaultPushQuery: Partial<PushQuery> = {
@@ -47,101 +42,14 @@ const FILTER_COLUMNS: Record<string, string> = {
   type: 'type',
 };
 
-const rowToAction = (row: { data: unknown }): Action =>
-  toClass(row.data, Action.prototype) as Action;
+const rowToAction = (row: { data: unknown }): Action => restorePush(row.data);
 
-function bumpCount(
-  m: Map<string, RepoActivityTabCounts>,
-  canonicalKey: string,
-  tab: keyof RepoActivityTabCounts,
-): void {
-  if (!canonicalKey) {
-    return;
-  }
-  let row = m.get(canonicalKey);
-  if (!row) {
-    row = emptyRepoActivityTabCounts();
-    m.set(canonicalKey, row);
-  }
-  row[tab] += 1;
-}
-
-function bumpMaxTimestampMs(
-  m: Map<string, number>,
-  canonicalKey: string,
-  timestamp: unknown,
-): void {
-  if (!canonicalKey) {
-    return;
-  }
-  // `timestamp` is a BIGINT column, which node-postgres returns as a string.
-  // Anything else (null, undefined, empty) is not a usable timestamp.
-  const ts =
-    typeof timestamp === 'number'
-      ? timestamp
-      : typeof timestamp === 'string' && timestamp.trim() !== ''
-        ? Number(timestamp)
-        : NaN;
-  if (!Number.isFinite(ts)) {
-    return;
-  }
-  const prev = m.get(canonicalKey);
-  if (prev === undefined || ts > prev) {
-    m.set(canonicalKey, ts);
-  }
-}
-
-/**
- * Scan all push rows: tab counts and max timestamps per canonical remote URL
- * (matches the Activity UI). The URL lives inside the `data` JSONB payload, and
- * canonicalization happens in Node so the result matches the mongo and fs
- * backends exactly.
- */
-export const getRepoPushRollupsByCanonicalUrl =
-  async (): Promise<RepoPushRollupsByCanonicalUrl> => {
-    const result = await query<{
-      url: string | null;
-      error: boolean;
-      rejected: boolean;
-      canceled: boolean;
-      authorised: boolean;
-      blocked: boolean;
-      allow_push: boolean;
-      timestamp: string | number | null;
-    }>(
-      `SELECT data->>'url' AS url, error, rejected, canceled, authorised, blocked,
-              allow_push, timestamp
-         FROM pushes
-        WHERE type = 'push'`,
-    );
-
-    const tabCounts = new Map<string, RepoActivityTabCounts>();
-    const latestPendingReviewAtMs = new Map<string, number>();
-    const latestPushAtMs = new Map<string, number>();
-
-    for (const row of result.rows) {
-      const url = typeof row.url === 'string' ? row.url : '';
-      const key = canonicalRemoteUrl(url);
-      if (!key) {
-        continue;
-      }
-      const tab = activityPrimaryStatusFromFlags({
-        error: row.error === true,
-        rejected: row.rejected === true,
-        canceled: row.canceled === true,
-        authorised: row.authorised === true,
-        blocked: row.blocked === true,
-        allowPush: row.allow_push === true,
-      });
-      bumpCount(tabCounts, key, tab);
-      bumpMaxTimestampMs(latestPushAtMs, key, row.timestamp);
-      if (tab === 'pending') {
-        bumpMaxTimestampMs(latestPendingReviewAtMs, key, row.timestamp);
-      }
-    }
-
-    return { tabCounts, latestPendingReviewAtMs, latestPushAtMs };
-  };
+const listFields = Object.entries(pushListProjection)
+  .filter(([, included]) => included)
+  .map(([field]) => `'${field}'`)
+  .join(', ');
+const listData = `(SELECT COALESCE(jsonb_object_agg(field, data->field), '{}'::jsonb)
+  FROM unnest(ARRAY[${listFields}]) AS field WHERE data ? field)`;
 
 /**
  * Pushes shown on a user profile: those the user made (any known email variant)
@@ -163,16 +71,12 @@ export const getPushesForUserProfile = async (
   }
 
   const result = await query<{ data: unknown }>(
-    `SELECT data - 'steps' - 'diff' AS data FROM pushes WHERE type = 'push' AND ${predicate} ORDER BY timestamp DESC`,
+    `SELECT ${listData} AS data FROM pushes WHERE type = 'push' AND ${predicate} ORDER BY timestamp DESC`,
     values,
   );
   return result.rows.map(rowToAction);
 };
 
-// List queries drop `steps` and `diff` from the returned document: both hold the
-// full diff (largest part of a push row) and the mongo backend's list projection
-// excludes them as well. The push-detail path (`getPush`) still returns the whole
-// document.
 export const getPushes = async (q: Partial<PushQuery> = defaultPushQuery): Promise<Action[]> => {
   const clauses: string[] = [];
   const values: unknown[] = [];
@@ -185,7 +89,7 @@ export const getPushes = async (q: Partial<PushQuery> = defaultPushQuery): Promi
 
   const where = clauses.length > 0 ? `WHERE ${clauses.join(' AND ')}` : '';
   const result = await query<{ data: unknown }>(
-    `SELECT data - 'steps' - 'diff' AS data FROM pushes ${where} ORDER BY timestamp DESC`,
+    `SELECT ${listData} AS data FROM pushes ${where} ORDER BY timestamp DESC`,
     values,
   );
   return result.rows.map(rowToAction);
@@ -208,7 +112,7 @@ const buildAuditUpsert = (action: Action): { text: string; values: unknown[] } =
 
   // Round-trip through JSON to drop class identity / mongo-specific _id fields
   // before persisting (mirrors mongo's `JSON.parse(JSON.stringify(action))`).
-  const data = JSON.parse(JSON.stringify(action));
+  const data = JSON.parse(JSON.stringify(compactPush(action)));
   delete data._id;
 
   return {

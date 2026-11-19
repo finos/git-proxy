@@ -272,7 +272,7 @@ const AddUserDialog = ({
       height='auto'
       initialFocusRef={userInputRef}
     >
-      <Dialog.Body>
+      <Dialog.Body data-testid='add-user-dialog'>
         <Stack direction='vertical' gap='normal' padding='none'>
           {fetchError ? <Warning message={fetchError} /> : null}
           {submitError ? <Warning message={submitError} /> : null}
@@ -332,6 +332,7 @@ const AddUserDialog = ({
             variant='primary'
             disabled={!canSubmit}
             onClick={() => void handleSubmit()}
+            data-testid='add-user-confirm-btn'
           >
             {submitLoading ? 'Adding…' : 'Add'}
           </Button>
@@ -358,6 +359,7 @@ const AddUser = ({ repoId, type, refreshFn, excludedUsernames }: AddUserProps) =
         size='small'
         leadingVisual={PersonAddIcon}
         onClick={() => setOpen(true)}
+        data-testid={`add-user-btn-${type}`}
       >
         Add user
       </Button>

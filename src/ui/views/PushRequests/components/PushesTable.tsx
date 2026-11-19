@@ -21,6 +21,7 @@ import { GitBranchIcon, GitCommitIcon, TagIcon } from '@primer/octicons-react';
 import { Link, Spinner, Text } from '@primer/react';
 import { DataTable, createColumnHelper } from '@primer/react/experimental';
 import Pagination from '../../../components/Pagination/Pagination';
+import ReviewerIdentity from '../../../components/ReviewerIdentity/ReviewerIdentity';
 import UserIdentity from '../../../components/UserIdentity/UserIdentity';
 import { PushActionView, RepoView } from '../../../types';
 import { trimPrefixRefsHeads } from '../../../../db/helper';
@@ -112,29 +113,6 @@ function primaryAuthorLine(row: PushActionView): { label: string; title: string 
     return { label: committerEmail, title: committerEmail };
   }
   return { label: '', title: '' };
-}
-
-/** Prefer API `displayName`; otherwise derive a readable label from `email` / `reviewerEmail` local part. */
-function reviewerDisplayNameFromReviewer(
-  reviewer:
-    | {
-        displayName?: string | null;
-        email?: string;
-        reviewerEmail?: string;
-      }
-    | undefined,
-): string | undefined {
-  const dn = reviewer?.displayName?.trim();
-  if (dn) return dn;
-  const addr = reviewer?.email?.trim() || reviewer?.reviewerEmail?.trim();
-  if (!addr?.includes('@')) return undefined;
-  const local = addr.split('@')[0] ?? '';
-  if (!local) return undefined;
-  return local
-    .split(/[._-]+/u)
-    .filter(Boolean)
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
-    .join(' ');
 }
 
 function primaryAuthorFields(row: PushActionView): { name: string; email: string } {
@@ -355,11 +333,8 @@ const PushesTable = ({
               minWidth: 'min(100%, 8rem)',
               width: 'auto',
               renderCell: (row) => {
-                const username = row.authorised
-                  ? row.attestation?.reviewer?.username?.trim()
-                  : undefined;
-                const approvedByName = row.attestation?.reviewer?.displayName?.trim() || undefined;
-                if (!username) {
+                const reviewer = row.authorised ? row.attestation?.reviewer : undefined;
+                if (!reviewer?.username?.trim()) {
                   return (
                     <Text
                       as='span'
@@ -371,9 +346,8 @@ const PushesTable = ({
                 }
                 return (
                   <div className='min-w-0' onClick={(e) => e.stopPropagation()}>
-                    <UserIdentity
-                      username={username}
-                      name={approvedByName}
+                    <ReviewerIdentity
+                      reviewer={reviewer}
                       className='flex min-w-0 flex-col gap-0.5'
                       nameClassName={`${authorNameClass} text-left`}
                       emailClassName={`${mutedMetaClass} break-all text-left`}
@@ -393,16 +367,8 @@ const PushesTable = ({
               minWidth: 'min(100%, 8rem)',
               width: 'auto',
               renderCell: (row) => {
-                const reviewer = row.rejection?.reviewer;
-                const username = row.rejected ? reviewer?.username?.trim() : undefined;
-                const rejectedByName = reviewerDisplayNameFromReviewer(reviewer);
-                const reviewerEmail =
-                  reviewer?.email?.trim() || reviewer?.reviewerEmail?.trim() || undefined;
-                const title =
-                  rejectedByName && reviewerEmail
-                    ? `${rejectedByName} <${reviewerEmail}>`
-                    : reviewerEmail || rejectedByName || username || undefined;
-                if (!username) {
+                const reviewer = row.rejected ? row.rejection?.reviewer : undefined;
+                if (!reviewer?.username?.trim()) {
                   return (
                     <Text
                       as='span'
@@ -414,11 +380,8 @@ const PushesTable = ({
                 }
                 return (
                   <div className='min-w-0' onClick={(e) => e.stopPropagation()}>
-                    <UserIdentity
-                      username={username}
-                      name={rejectedByName}
-                      email={reviewerEmail}
-                      title={title}
+                    <ReviewerIdentity
+                      reviewer={reviewer}
                       className='flex min-w-0 flex-col gap-0.5'
                       nameClassName={`${authorNameClass} text-left`}
                       emailClassName={`${mutedMetaClass} break-all text-left`}
@@ -553,6 +516,7 @@ const PushesTable = ({
     <div className='w-full min-w-0'>
       <div
         ref={tableShellRef}
+        data-testid='pushes-table'
         className={`${activityTableShellRowClass} overflow-x-auto rounded-md border border-[var(--borderColor-default)]`}
       >
         <DataTable<PushTableRow> cellPadding='condensed' columns={columns} data={tableRows} />

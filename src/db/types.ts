@@ -181,6 +181,7 @@ export interface Sink {
   getSessionStore: () => MongoDBStore | Store | undefined;
   ensureSessionStoreReady?: () => Promise<void>;
   getRepoPushRollupsByCanonicalUrl: () => Promise<RepoPushRollupsByCanonicalUrl>;
+  rebuildRepoPushRollups: () => Promise<RepoPushRollupsByCanonicalUrl>;
   getPushes: (query: Partial<PushQuery>) => Promise<Action[]>;
   getPushesForUserProfile: (emailVariants: string[], profileUsername: string) => Promise<Action[]>;
   writeAudit: (action: Action) => Promise<void>;

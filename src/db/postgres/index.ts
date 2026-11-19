@@ -26,6 +26,7 @@ export const {
   getPushes,
   getPushesForUserProfile,
   getRepoPushRollupsByCanonicalUrl,
+  rebuildRepoPushRollups,
   writeAudit,
   getPush,
   deletePush,

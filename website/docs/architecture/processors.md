@@ -173,7 +173,7 @@ Source: [/src/proxy/processors/push-action/preReceive.ts](https://github.com/fin
 
 Executes `git diff` to obtain the diff for the given revision range. If there are no commits (possibly due to a malformed push), the push is blocked.
 
-The data extracted in this step is later used in [`scanDiff`](#scandiff).
+The full diff is stored once in `action.diff` for review and later used in [`scanDiff`](#scandiff). The processors log the diff's byte count and scan findings without logging another copy of the full diff. Historical records with the diff in the step's `content` remain readable.
 
 Source: [/src/proxy/processors/push-action/getDiff.ts](https://github.com/finos/git-proxy/blob/main/src/proxy/processors/push-action/getDiff.ts)
 
@@ -244,6 +244,8 @@ Source: [/src/proxy/processors/push-action/blockForAuth.ts](https://github.com/f
 
 This action runs after a chain has been executed. It stores in the database the entire `Action` object along with the list of `steps` that the action has gone through and their associated logs or error messages that occurred during processing of the chain.
 
+Push list and profile activity responses return metadata without processor steps, `lastStep`, or diff content. Use `GET /api/v1/push/:id` to retrieve the full audit record and diff for review. When `lastStep` exactly matches the final entry in `steps`, the database stores a reference and restores `lastStep` on detail reads. A distinct `lastStep` is preserved. Historical diff content and logs remain readable and are not truncated.
+
 Note: **`audit` writes all actions** (push, pull, default/unclassified) to the DB.
 
 An action object (or entry in the pushes table) might look like this:
@@ -307,6 +309,6 @@ Recursively removes the contents of the (modified) repository clone stored in `.
   - Without deletion, `./.remote` would grow indefinitely as new repository clones are added for each push (rather than each repository!)
   - Each action gets a unique directory for isolation in [`pullRemote`](#pullremote), which allows pushes to the same repository for multiple users to be processed concurrently without conflicts or confusion over credentials.
 
-`clearBareClone` runs only if `pullRemote` was successful.
+`clearBareClone` runs whenever `proxyGitPath` is set at the end of the chain. This can happen after a successful `pullRemote` or when a plugin (such as [`extractPullData`](../development/plugins#scanning-pulls)) checked out the repo during a pull.
 
 Source: [/src/proxy/processors/post-processor/clearBareClone.ts](https://github.com/finos/git-proxy/blob/main/src/proxy/processors/post-processor/clearBareClone.ts)

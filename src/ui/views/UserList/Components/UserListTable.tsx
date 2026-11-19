@@ -137,7 +137,10 @@ export default function UserListTable(props: UserListTableProps): React.ReactEle
           />
         </div>
       </div>
-      <div className='overflow-hidden rounded-md border border-(--borderColor-default,#d0d7de)'>
+      <div
+        className='overflow-hidden rounded-md border border-(--borderColor-default,#d0d7de)'
+        data-testid='user-list-table'
+      >
         <DataTable<UserTableRow> cellPadding='normal' columns={columns} data={tableRows} />
       </div>
       <div className='mt-auto shrink-0'>
