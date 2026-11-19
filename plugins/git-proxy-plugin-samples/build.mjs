@@ -14,6 +14,10 @@
  * limitations under the License.
  */
 
+/**
+ * Builds git-proxy-plugin-samples into JS.
+ */
+
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -21,6 +25,7 @@ import ts from 'typescript';
 
 const packageRoot = dirname(fileURLToPath(import.meta.url));
 const outDir = join(packageRoot, 'dist');
+
 const sources = [
   'customSecretScanner.ts',
   'pullSecretScanner.ts',
@@ -28,6 +33,8 @@ const sources = [
   'extractPullData/parsePull.ts',
   'extractPullData/fetchWanted.ts',
   'extractPullData/resolveWants.ts',
+  'externalServiceIntegration.ts',
+  'mockDlpService.ts'
 ];
 
 for (const source of sources) {
