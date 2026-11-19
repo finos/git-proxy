@@ -227,3 +227,62 @@ describe('checkHiddenCommits.exec - parent (commitFrom) exemption', () => {
     expect(action.error).toBe(true);
   });
 });
+
+describe('checkHiddenCommits.exec - annotated tag pushes', () => {
+  let action: Action;
+  let req: Request;
+
+  const TAG_OID = 'eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee';
+  const PEELED_COMMIT = 'ffffffffffffffffffffffffffffffffffffffff';
+  const HIDDEN = 'dddddddddddddddddddddddddddddddddddddddd';
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+
+    action = new Action('some-id', 'push', 'POST', Date.now(), 'repo.git');
+    action.proxyGitPath = '/fake';
+    action.commitFrom = EMPTY_COMMIT_HASH;
+    action.commitTo = TAG_OID;
+    action.newIdxFiles = ['pack-test.idx'];
+    req = { body: '' } as Request;
+
+    mockReaddirSync.mockReturnValue(['pack-test.idx']);
+  });
+
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('allows a tag-only pack with no commit objects', async () => {
+    mockSpawnSync
+      .mockReturnValueOnce({ stdout: `${PEELED_COMMIT}\n` })
+      .mockReturnValueOnce({ stdout: `${TAG_OID} tag 100 1\n` });
+
+    await checkHidden(req, action);
+
+    const step = action.steps.find((s) => s.stepName === 'checkHiddenCommits');
+    expect(step?.logs).toContain('checkHiddenCommits - Total commits in the pack: 0');
+    expect(step?.logs).toContain(
+      'checkHiddenCommits - All pack commits are referenced in the introduced range.',
+    );
+    expect(action.error).toBe(false);
+  });
+
+  it('blocks unreferenced commits smuggled in an annotated tag pack', async () => {
+    mockSpawnSync.mockReturnValueOnce({ stdout: `${PEELED_COMMIT}\n` }).mockReturnValueOnce({
+      stdout: `${PEELED_COMMIT} commit 100 1\n${HIDDEN} commit 100 2\n${TAG_OID} tag 100 3\n`,
+    });
+
+    await checkHidden(req, action);
+
+    const step = action.steps.find((s) => s.stepName === 'checkHiddenCommits');
+    expect(step?.logs).toContain('checkHiddenCommits - Referenced commits: 1');
+    expect(step?.logs).toContain('checkHiddenCommits - Unreferenced commits: 1');
+    expect(step?.logs).toContain(
+      `checkHiddenCommits - Unreferenced commits in pack (1): ${HIDDEN}.\n` +
+        `This usually happens when a branch was made from a commit that hasn't been approved and pushed to the remote.\n` +
+        `Please rebase the branch and push again.`,
+    );
+    expect(action.error).toBe(true);
+  });
+});
