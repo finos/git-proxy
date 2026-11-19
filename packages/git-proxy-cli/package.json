@@ -5,7 +5,12 @@
   "bin": {
     "git-proxy-cli": "./dist/index.js"
   },
+  "files": [
+    "dist"
+  ],
   "dependencies": {
+    "axios": "^1.18.1",
+    "yargs": "^18.0.0",
     "@finos/git-proxy": "2.3.0"
   },
   "scripts": {
@@ -19,6 +24,6 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/finos/git-proxy",
-    "path": "packages/git-proxy-cli"
+    "directory": "packages/git-proxy-cli"
   }
 }
