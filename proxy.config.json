@@ -221,6 +221,13 @@
       }
     ]
   },
+  "cache": {
+    "enabled": false,
+    "maxSizeGB": 2,
+    "maxRepositories": 50,
+    "cacheDir": "./.remote/cache",
+    "gitTimeoutSeconds": 600
+  },
   "ssh": {
     "enabled": false,
     "port": 2222,

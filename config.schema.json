@@ -429,6 +429,38 @@
         }
       }
     },
+    "cache": {
+      "description": "Configuration for bare repository cache (hybrid cache system)",
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Enable the bare repository cache (recommended). When disabled, each push clones directly from the remote as usual.",
+          "default": false
+        },
+        "maxSizeGB": {
+          "type": "number",
+          "description": "Maximum cache size in gigabytes",
+          "default": 2
+        },
+        "maxRepositories": {
+          "type": "number",
+          "description": "Maximum number of repositories in cache",
+          "default": 50
+        },
+        "cacheDir": {
+          "type": "string",
+          "description": "Directory path for bare repository cache",
+          "default": "./.remote/cache"
+        },
+        "gitTimeoutSeconds": {
+          "type": "number",
+          "description": "Maximum time in seconds a single git command of a cached pull may run before it is killed and the push fails",
+          "default": 600
+        }
+      },
+      "additionalProperties": false
+    },
     "ssh": {
       "description": "SSH proxy server configuration. The proxy uses SSH agent forwarding to authenticate with remote Git servers (GitHub, GitLab, etc.) using the client's SSH keys. The proxy's own host key is auto-generated and only used to identify the proxy to connecting clients.",
       "type": "object",

@@ -37,6 +37,10 @@ export interface GitProxyConfig {
    */
   authorisedList?: AuthorisedRepo[];
   /**
+   * Configuration for bare repository cache (hybrid cache system)
+   */
+  cache?: Cache;
+  /**
    * Block commits based on rules defined over author/committer e-mail addresses, commit
    * message content and diff content
    */
@@ -376,6 +380,34 @@ export interface AuthorisedRepo {
   project: string;
   url: string;
   [property: string]: any;
+}
+
+/**
+ * Configuration for bare repository cache (hybrid cache system)
+ */
+export interface Cache {
+  /**
+   * Directory path for bare repository cache
+   */
+  cacheDir?: string;
+  /**
+   * Enable the bare repository cache (recommended). When disabled, each push clones directly
+   * from the remote as usual.
+   */
+  enabled?: boolean;
+  /**
+   * Maximum time in seconds a single git command of a cached pull may run before it is
+   * killed and the push fails
+   */
+  gitTimeoutSeconds?: number;
+  /**
+   * Maximum number of repositories in cache
+   */
+  maxRepositories?: number;
+  /**
+   * Maximum cache size in gigabytes
+   */
+  maxSizeGB?: number;
 }
 
 /**
@@ -1096,6 +1128,7 @@ const typeMap: any = {
         typ: u(undefined, a(r('AuthenticationElement'))),
       },
       { json: 'authorisedList', js: 'authorisedList', typ: u(undefined, a(r('AuthorisedRepo'))) },
+      { json: 'cache', js: 'cache', typ: u(undefined, r('Cache')) },
       { json: 'commitConfig', js: 'commitConfig', typ: u(undefined, r('CommitConfig')) },
       { json: 'configurationSources', js: 'configurationSources', typ: u(undefined, 'any') },
       { json: 'contactEmail', js: 'contactEmail', typ: u(undefined, '') },
@@ -1219,6 +1252,16 @@ const typeMap: any = {
       { json: 'url', js: 'url', typ: '' },
     ],
     'any',
+  ),
+  Cache: o(
+    [
+      { json: 'cacheDir', js: 'cacheDir', typ: u(undefined, '') },
+      { json: 'enabled', js: 'enabled', typ: u(undefined, true) },
+      { json: 'gitTimeoutSeconds', js: 'gitTimeoutSeconds', typ: u(undefined, 3.14) },
+      { json: 'maxRepositories', js: 'maxRepositories', typ: u(undefined, 3.14) },
+      { json: 'maxSizeGB', js: 'maxSizeGB', typ: u(undefined, 3.14) },
+    ],
+    false,
   ),
   CommitConfig: o(
     [
