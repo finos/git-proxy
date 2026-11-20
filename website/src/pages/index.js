@@ -211,6 +211,16 @@ function Home() {
               />
             </div>
           </div>
+          <div className='col col--4'>
+            <div className='col-demo'>
+              <Avatar name='Andrii Kotliar' username='Andreybest' />
+            </div>
+          </div>
+          <div className='col col--4'>
+            <div className='col-demo'>
+              <Avatar name='Vladimir Zateychuk' username='re-vlad' />
+            </div>
+          </div>
         </div>
       </div>
       <div className='container text--center'>
