@@ -110,6 +110,16 @@ describe('MongoDB Repo', async () => {
 
       expect(result).toEqual([]);
     });
+
+    it('should lowercase the name filter without changing the caller query', async () => {
+      const query = { name: 'Sample', project: 'Test-Project' };
+      mockToArray.mockResolvedValue([TEST_REPO]);
+
+      await getRepos(query);
+
+      expect(mockFind).toHaveBeenCalledWith({ name: 'sample', project: 'Test-Project' });
+      expect(query).toEqual({ name: 'Sample', project: 'Test-Project' });
+    });
   });
 
   describe('getRepo', () => {
