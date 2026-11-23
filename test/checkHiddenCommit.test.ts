@@ -16,7 +16,8 @@
 
 import { describe, it, beforeEach, afterEach, expect, vi } from 'vitest';
 import { exec as checkHidden } from '../src/proxy/processors/push-action/checkHiddenCommits';
-import { Action } from '../src/proxy/actions';
+import { Action, PushType, Step } from '../src/proxy/actions';
+import { TagData } from '../src/types/models';
 import { EMPTY_COMMIT_HASH } from '../src/proxy/constants';
 import { Request } from 'express';
 
@@ -284,5 +285,98 @@ describe('checkHiddenCommits.exec - annotated tag pushes', () => {
         `Please rebase the branch and push again.`,
     );
     expect(action.error).toBe(true);
+  });
+
+  describe('when the pushed pack could not be indexed', () => {
+    const addParsePackStep = (entries: number) => {
+      const parseStep = new Step('parsePackFile');
+      parseStep.content = { meta: { sig: 'PACK', version: 2, entries } };
+      action.addStep(parseStep);
+    };
+
+    beforeEach(() => {
+      action.actionType = PushType.TAG;
+      action.newIdxFiles = [];
+      action.tagData = [{ object: PEELED_COMMIT } as TagData];
+    });
+
+    it('fails when the pack carries more than tag objects', async () => {
+      addParsePackStep(4);
+
+      await checkHidden(req, action);
+
+      const step = action.steps.find((s) => s.stepName === 'checkHiddenCommits');
+      expect(step?.error).toBe(true);
+      expect(step?.errorMessage).toBe(
+        'Unable to verify the pushed pack. Push the commits on a branch first, then push the tag.',
+      );
+      expect(action.error).toBe(true);
+      expect(mockSpawnSync).not.toHaveBeenCalled();
+    });
+
+    it('fails when the pack metadata is unavailable', async () => {
+      await checkHidden(req, action);
+
+      expect(action.error).toBe(true);
+      expect(mockSpawnSync).not.toHaveBeenCalled();
+    });
+
+    it('allows a pack holding only the tag object', async () => {
+      addParsePackStep(1);
+      mockSpawnSync.mockReturnValueOnce({ stdout: `${PEELED_COMMIT}\n` });
+
+      await checkHidden(req, action);
+
+      const step = action.steps.find((s) => s.stepName === 'checkHiddenCommits');
+      expect(step?.logs).toContain('checkHiddenCommits - Total commits in the pack: 0');
+      expect(action.error).toBe(false);
+    });
+  });
+
+  describe('when force-moving an existing tag', () => {
+    const OLD_TAG_OID = '1111111111111111111111111111111111111111';
+
+    beforeEach(() => {
+      action.actionType = PushType.TAG;
+      action.commitFrom = OLD_TAG_OID;
+    });
+
+    it('resolves introduced commits from the new tag alone', async () => {
+      mockSpawnSync
+        .mockReturnValueOnce({ stdout: `${PEELED_COMMIT}\n` })
+        .mockReturnValueOnce({ stdout: `${PEELED_COMMIT} commit 100 1\n${TAG_OID} tag 100 2\n` });
+
+      await checkHidden(req, action);
+
+      expect(mockSpawnSync.mock.calls[0][1]).toEqual(['rev-list', TAG_OID]);
+      const step = action.steps.find((s) => s.stepName === 'checkHiddenCommits');
+      expect(step?.logs).toContain(
+        'checkHiddenCommits - All pack commits are referenced in the introduced range.',
+      );
+      expect(action.error).toBe(false);
+    });
+
+    it('still blocks unreferenced commits in the pack', async () => {
+      mockSpawnSync.mockReturnValueOnce({ stdout: `${PEELED_COMMIT}\n` }).mockReturnValueOnce({
+        stdout: `${PEELED_COMMIT} commit 100 1\n${HIDDEN} commit 100 2\n${TAG_OID} tag 100 3\n`,
+      });
+
+      await checkHidden(req, action);
+
+      const step = action.steps.find((s) => s.stepName === 'checkHiddenCommits');
+      expect(step?.logs).toContain('checkHiddenCommits - Unreferenced commits: 1');
+      expect(action.error).toBe(true);
+    });
+
+    it('keeps the old..new range for branch pushes', async () => {
+      action.actionType = PushType.BRANCH;
+      mockSpawnSync
+        .mockReturnValueOnce({ stdout: `${PEELED_COMMIT}\n` })
+        .mockReturnValueOnce({ stdout: `${PEELED_COMMIT} commit 100 1\n` });
+
+      await checkHidden(req, action);
+
+      expect(mockSpawnSync.mock.calls[0][1]).toEqual(['rev-list', `${OLD_TAG_OID}..${TAG_OID}`]);
+    });
   });
 });
