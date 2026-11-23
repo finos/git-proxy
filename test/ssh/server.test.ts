@@ -208,6 +208,23 @@ describe('SSHServer', () => {
 
       expect(() => errorHandler(new Error('Test error'))).not.toThrow();
     });
+
+    it('should not mark a newly connected client as disconnected', () => {
+      (server as any).handleClient(mockClient, clientInfo);
+      expect(mockClient.disconnected).toBeFalsy();
+    });
+
+    it.each(['end', 'close'])(
+      'should mark the client as disconnected on %s so pending work can stop',
+      (event) => {
+        (server as any).handleClient(mockClient, clientInfo);
+        const handler = mockClient.on.mock.calls.find((call: any[]) => call[0] === event)?.[1];
+
+        handler();
+
+        expect(mockClient.disconnected).toBe(true);
+      },
+    );
   });
 
   describe('Authentication - Public Key', () => {
@@ -1287,6 +1304,79 @@ describe('SSHServer', () => {
         expect.stringContaining('Security chain execution failed'),
       );
       expect(mockStream.exit).toHaveBeenCalledWith(1);
+    });
+
+    describe('when the client disconnects while the chain runs', () => {
+      const refUpdatePack = () => {
+        const refLine = `${'0'.repeat(40)} ${'a'.repeat(40)} refs/heads/main\0report-status\n`;
+        const pktLen = (4 + refLine.length).toString(16).padStart(4, '0');
+        return Buffer.from(`${pktLen}${refLine}0000`);
+      };
+
+      it('should expose the SSH session to the chain so plugins can detect the disconnect', async () => {
+        const chainSpy = vi.spyOn(chain.default, 'executeChain').mockResolvedValue({
+          error: false,
+          blocked: false,
+        } as any);
+        vi.spyOn(GitProtocol, 'forwardPackDataToRemote').mockResolvedValue(undefined);
+
+        const { dataHandler, endHandler } = await setupPushHandlers();
+        dataHandler(refUpdatePack());
+        await endHandler();
+
+        const req = chainSpy.mock.calls[0][0] as any;
+        expect(req.isSSH).toBe(true);
+        expect(req.sshClient).toBe(mockClient);
+      });
+
+      it('should not forward a push that passed the chain', async () => {
+        vi.spyOn(chain.default, 'executeChain').mockImplementation(async () => {
+          mockClient.disconnected = true;
+          return { error: false, blocked: false } as any;
+        });
+        const forwardSpy = vi
+          .spyOn(GitProtocol, 'forwardPackDataToRemote')
+          .mockResolvedValue(undefined);
+
+        const { dataHandler, endHandler } = await setupPushHandlers();
+        dataHandler(refUpdatePack());
+        await endHandler();
+
+        expect(forwardSpy).not.toHaveBeenCalled();
+        expect(mockStream.exit).not.toHaveBeenCalled();
+      });
+
+      it('should not write a rejection to the closed session', async () => {
+        vi.spyOn(chain.default, 'executeChain').mockImplementation(async () => {
+          mockClient.disconnected = true;
+          return {
+            error: true,
+            errorMessage: 'Client disconnected before the DLP scan completed',
+          } as any;
+        });
+
+        const { dataHandler, endHandler } = await setupPushHandlers();
+        dataHandler(refUpdatePack());
+        await endHandler();
+
+        expect(mockStream.stderr.write).not.toHaveBeenCalled();
+        expect(mockStream.exit).not.toHaveBeenCalled();
+        expect(mockStream.end).not.toHaveBeenCalled();
+      });
+
+      it('should not write an error to the closed session when the chain throws', async () => {
+        vi.spyOn(chain.default, 'executeChain').mockImplementation(async () => {
+          mockClient.disconnected = true;
+          throw new Error('Chain crashed');
+        });
+
+        const { dataHandler, endHandler } = await setupPushHandlers();
+        dataHandler(refUpdatePack());
+        await endHandler();
+
+        expect(mockStream.stderr.write).not.toHaveBeenCalled();
+        expect(mockStream.exit).not.toHaveBeenCalled();
+      });
     });
 
     it('should use default blocked message when none provided', async () => {

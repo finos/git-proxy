@@ -41,6 +41,8 @@ enum ActionType {
   BLOCKED = 'Blocked',
 }
 
+const CLIENT_DISCONNECTED_MESSAGE = 'Client disconnected before the push could be forwarded';
+
 const logAction = (
   url: string,
   host: string | null | undefined,
@@ -93,6 +95,18 @@ const proxyFilter: ProxyOptions['filter'] = async (req, res) => {
       return false;
     }
 
+    // Don't forward push if client disconnected
+    if (req.socket?.destroyed) {
+      logAction(
+        req.url,
+        req.headers.host,
+        req.headers['user-agent'],
+        ActionType.ERROR,
+        CLIENT_DISCONNECTED_MESSAGE,
+      );
+      return false;
+    }
+
     logAction(req.url, req.headers.host, req.headers['user-agent'], ActionType.ALLOWED);
 
     // this is the only case where we do not respond directly, instead we return true to proxy the request
@@ -112,6 +126,12 @@ const sendErrorResponse = (
   message: string,
   statusReport?: Buffer,
 ): void => {
+  // Cannot send response if client disconnected
+  if (req.socket?.destroyed) {
+    console.log('Client disconnected before the response could be sent. Skipping response');
+    return;
+  }
+
   // GET requests to /info/refs (used to check refs for many git operations) must use Git protocol error packet format
   if (req.method === 'GET' && req.url.includes('/info/refs')) {
     res.set('content-type', 'application/x-git-upload-pack-advertisement');
@@ -425,7 +445,7 @@ const endStreamedResponseWithMessage = (
   message: string,
   statusReport?: Buffer,
 ): void => {
-  if (res.writableEnded) {
+  if (res.writableEnded || res.destroyed || res.socket?.destroyed) {
     return;
   }
   res.write(encodeSidebandChunk(SidebandBand.Progress, `\t${message}\n`));
@@ -612,6 +632,17 @@ const createReceivePackHandler = (originsToProxy: string[]): RequestHandler => {
         } else {
           sendErrorResponse(req, res, message, statusReport);
         }
+        return;
+      }
+
+      if (req.socket?.destroyed) {
+        logAction(
+          req.url,
+          req.headers.host,
+          req.headers['user-agent'],
+          ActionType.ERROR,
+          CLIENT_DISCONNECTED_MESSAGE,
+        );
         return;
       }
 
