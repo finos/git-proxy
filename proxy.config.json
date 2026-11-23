@@ -180,6 +180,7 @@
   "csrfProtection": true,
   "sidebandProgress": true,
   "plugins": [],
+  "eventHandlers": [],
   "apiAuthentication": [
     {
       "type": "jwt",
