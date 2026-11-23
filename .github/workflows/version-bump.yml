@@ -74,7 +74,9 @@ jobs:
           ref: ${{ github.sha }}
           path: .bump-action
           persist-credentials: false
-          sparse-checkout: .github/actions/bump-versions
+          sparse-checkout: |
+            .github/actions/bump-versions
+            scripts/release
 
       - name: Bump versions
         uses: ./.bump-action/.github/actions/bump-versions
