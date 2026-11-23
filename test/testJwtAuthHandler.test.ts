@@ -265,5 +265,63 @@ describe('JWT', () => {
       expect(res.status).toHaveBeenCalledWith(401);
       expect(res.send).toHaveBeenCalledWith(expect.stringMatching(/Invalid JWT:/));
     });
+
+    describe('role assignment with a signed token', () => {
+      const { privateKey, publicKey } = generateRsaKeyPair();
+      const jwk = publicKeyToJwk(publicKey, 'my-kid');
+
+      const signToken = (claims: Record<string, unknown>) =>
+        jwt.sign({ azp: 'client-id', ...claims }, privateKey, {
+          algorithm: 'RS256',
+          issuer: jwtConfig.authorityURL!,
+          audience: jwtConfig.expectedAudience!,
+          keyid: 'my-kid',
+        });
+
+      beforeEach(() => {
+        vi.spyOn(axios, 'get')
+          .mockResolvedValueOnce({ data: { jwks_uri: 'https://mock.com/jwks' } })
+          .mockResolvedValueOnce({ data: { keys: [jwk] } });
+      });
+
+      it('should not grant admin from a raw admin claim that does not match roleMapping', async () => {
+        req.header.mockReturnValue(`Bearer ${signToken({ sub: 'user123', admin: true })}`);
+
+        await jwtAuthHandler(jwtConfig)(req, res, next);
+
+        expect(next).toHaveBeenCalledOnce();
+        expect(req.user.sub).toBe('user123');
+        expect(req.user.admin).toBe(false);
+      });
+
+      it('should not grant admin from a raw admin claim when roleMapping is absent', async () => {
+        delete jwtConfig.roleMapping;
+        req.header.mockReturnValue(`Bearer ${signToken({ sub: 'user123', admin: true })}`);
+
+        await jwtAuthHandler(jwtConfig)(req, res, next);
+
+        expect(next).toHaveBeenCalledOnce();
+        expect(req.user.admin).toBe(false);
+      });
+
+      it('should not grant a custom mapped role from a same-named raw claim', async () => {
+        jwtConfig.roleMapping = { 'ci-only': { group: 'ci' } } as RoleMapping;
+        req.header.mockReturnValue(`Bearer ${signToken({ sub: 'user123', 'ci-only': true })}`);
+
+        await jwtAuthHandler(jwtConfig)(req, res, next);
+
+        expect(next).toHaveBeenCalledOnce();
+        expect(req.user['ci-only']).toBe(false);
+      });
+
+      it('should grant admin when the token matches roleMapping', async () => {
+        req.header.mockReturnValue(`Bearer ${signToken({ sub: 'user123', admin: 'admin' })}`);
+
+        await jwtAuthHandler(jwtConfig)(req, res, next);
+
+        expect(next).toHaveBeenCalledOnce();
+        expect(req.user.admin).toBe(true);
+      });
+    });
   });
 });

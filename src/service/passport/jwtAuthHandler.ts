@@ -92,8 +92,12 @@ export const jwtAuthHandler = (overrideConfig: JwtConfig | null = null) => {
       return;
     }
 
-    req.user = verifiedPayload;
-    assignRoles(roleMapping as RoleMapping, verifiedPayload, req.user);
+    const user: Record<string, any> = { ...verifiedPayload, admin: false };
+    for (const role of Object.keys(roleMapping ?? {})) {
+      user[role] = false;
+    }
+    assignRoles(roleMapping as RoleMapping, verifiedPayload, user);
+    req.user = user;
 
     console.log('JWT validation successful\n');
     next();
