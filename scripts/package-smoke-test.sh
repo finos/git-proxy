@@ -19,13 +19,27 @@ cd "$ROOT"
 
 if [[ "$CLEAN_BUILD" == true ]]; then
   echo "Building from a clean slate..."
-  rm -rf dist build
+  rm -rf dist build packages/git-proxy-cli/dist
   npm run build
+  npm run build -w packages/git-proxy-cli
 fi
 
 TARBALL="$WORK/$(npm pack --silent --pack-destination "$WORK")"
 echo "Packed: $TARBALL"
 FILES="$(tar tzf "$TARBALL")"
+
+CLI_TARBALL="$WORK/$(npm pack --silent -w packages/git-proxy-cli --pack-destination "$WORK")"
+echo "Packed: $CLI_TARBALL"
+CLI_FILES="$(tar tzf "$CLI_TARBALL")"
+
+# The CLI's bin must be inside its tarball
+if ! grep -qx 'package/dist/index.js' <<<"$CLI_FILES"; then
+  echo "FAIL: dist/index.js is missing from the git-proxy-cli tarball."
+  echo "Did you run 'npm run build -w packages/git-proxy-cli'?"
+  echo "--- tarball contents ---"
+  sed 's|^package/||' <<<"$CLI_FILES"
+  exit 1
+fi
 
 # UI must be inside the tarball
 if ! grep -qx 'package/dist/build/index.html' <<<"$FILES"; then
@@ -43,7 +57,7 @@ grep -qE '^package/dist/build/assets/.+\.js$' <<<"$FILES" \
 # Install like a normal user
 cd "$WORK"
 npm init -y >/dev/null
-npm install --no-audit --no-fund --loglevel=error "$TARBALL"
+npm install --no-audit --no-fund --loglevel=error "$TARBALL" "$CLI_TARBALL"
 
 if (exec 3<>/dev/tcp/127.0.0.1/8080) 2>/dev/null; then
   echo "FAIL: port 8080 is already in use, refusing to test against a foreign server."
@@ -85,3 +99,20 @@ curl -fsS -o /dev/null "http://localhost:8080$ASSET" \
   || { echo "FAIL: $ASSET 404s."; exit 1; }
 
 echo "PASS: packaged UI installs and serves correctly ($ASSET)"
+
+"$WORK/node_modules/.bin/git-proxy-cli" --help >/dev/null \
+  || { echo "FAIL: git-proxy-cli --help failed."; exit 1; }
+
+ROOT_VERSION="$(node -p "require('$ROOT/package.json').version")"
+CLI_VERSION="$(node -p "require('$WORK/node_modules/@finos/git-proxy-cli/package.json').version")"
+RESOLVED_ROOT="$(node -p "require('$WORK/node_modules/@finos/git-proxy/package.json').version")"
+if [[ "$CLI_VERSION" != "$ROOT_VERSION" || "$RESOLVED_ROOT" != "$ROOT_VERSION" ]]; then
+  echo "FAIL: expected both packages at $ROOT_VERSION, got CLI $CLI_VERSION and @finos/git-proxy $RESOLVED_ROOT."
+  exit 1
+fi
+if [[ -d "$WORK/node_modules/@finos/git-proxy-cli/node_modules/@finos/git-proxy" ]]; then
+  echo "FAIL: git-proxy-cli installed its own copy of @finos/git-proxy instead of using the local tarball."
+  exit 1
+fi
+
+echo "PASS: packaged CLI installs and runs ($CLI_VERSION)"

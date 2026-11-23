@@ -53,6 +53,7 @@ vi.mock('../src/config', () => ({
   getTLSKeyPemPath: vi.fn(),
   getTLSCertPemPath: vi.fn(),
   getPlugins: vi.fn(),
+  getEventHandlers: vi.fn(() => []),
   getAuthorisedList: vi.fn(),
   getSSHConfig: vi.fn(() => ({ enabled: false })),
   getMaxPackSizeBytes: vi.fn(() => 500 * 1024 * 1024),

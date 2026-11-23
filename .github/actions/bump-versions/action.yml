@@ -22,6 +22,10 @@ runs:
         VERSION: ${{ inputs.version }}
       run: node "$GITHUB_ACTION_PATH/patch-lockfile-version.js"
 
+    - name: Verify packages are in lockstep for publishing
+      shell: bash
+      run: node "$GITHUB_ACTION_PATH/../../../scripts/release/versions.mjs" check
+
     - name: Guard against unexpected changes
       shell: bash
       run: |

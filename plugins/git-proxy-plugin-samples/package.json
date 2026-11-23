@@ -1,6 +1,6 @@
 {
   "name": "@finos/git-proxy-plugin-samples",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "A set of sample (dummy) plugins for GitProxy to demonstrate how plugins are authored.",
   "scripts": {
     "build": "node build.mjs",
@@ -14,6 +14,7 @@
     "./example": "./example.cjs",
     "./example.cjs": "./example.cjs",
     "./customSecretScanner": "./dist/customSecretScanner.js",
+    "./externalServiceIntegration": "./dist/externalServiceIntegration.js",
     "./extractPullData": "./dist/extractPullData/index.js",
     "./pullSecretScanner": "./dist/pullSecretScanner.js"
   },
@@ -22,6 +23,10 @@
     "example.cjs",
     "customSecretScanner.ts",
     "dist/customSecretScanner.js",
+    "externalServiceIntegration.ts",
+    "dist/externalServiceIntegration.js",
+    "mockDlpService.ts",
+    "dist/mockDlpService.js",
     "pullSecretScanner.ts",
     "dist/pullSecretScanner.js",
     "extractPullData/*.ts",
