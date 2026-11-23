@@ -142,12 +142,13 @@ export const executeChain = async (req: Request, res: Response): Promise<Action>
   try {
     // 1) Initialize basic action fields
     action = await proc.pre.parseAction(req);
-    getEventDispatcher()?.dispatch(action, 'started');
 
     // 2) Parse refs and PACK data before chain selection
     if (action.type === RequestType.PUSH) {
       action = await proc.pre.parsePush(req, action);
     }
+
+    getEventDispatcher()?.dispatch(action, 'started');
 
     // 3) Select the correct chain now that action.actionType is set
     const actionFns = await getChain(action);
