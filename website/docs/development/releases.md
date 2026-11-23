@@ -94,19 +94,22 @@ This workflow runs whenever you publish a GitHub release. A PR bumping the `pack
 
 As detailed in [`npm.yml`](https://github.com/finos/git-proxy/blob/main/.github/workflows/npm.yml), it:
 
-1. Builds the package
-2. Detects whether it's the latest version, according to the current `package.json` (e.g.: if the version you're publishing is `2.3`, and the latest on NPM `2.2`)
+1. Builds `@finos/git-proxy` along with the `@finos/git-proxy-cli` workspace
+2. Verifies that package versions match: the CLI version, `@finos/git-proxy` and their respective `package-lock.json` entries must all equal the root version (will fail otherwise)
+3. Detects whether it's the latest version according to the current `package.json`
 
 - If it's the latest version, it gets tagged as `'latest'` which is the default version that gets installed when calling `npx @finos/git-proxy`
 - If it's a maintenance release on an older line, it gets tagged as `release-X.Y` so users can pin it explicitly if needed (either via the tag, or the version itself)
 
-3. Publishes the package to NPM with the tag defined above
+4. Publishes `@finos/git-proxy` and then `@finos/git-proxy-cli` to NPM, both with the tag from above. It will fail if the version is already on NPM
+
+Note that release branches only publish correctly if the `npm.yml` file is updated (release lines prior to 2.4 do not support this by default).
 
 ### Publishing a Patch Release
 
 For patch releases, the same process applies. The only difference is that first we must perform the cascade-based merge flow from above:
 
-1. Make a PR against the release branch for the **earliest supported version** where the bug can be reproduced. The PR must include the bugfix, and also bump `package.json`, `package-lock.json` and `packages/git-proxy-cli/package.json` to the next patch version. Note that deprecated versions need not inherit the fix.
+1. Make a PR against the release branch for the **earliest supported version** where the bug can be reproduced. The PR must include the bugfix, and also bump `package.json`, `package-lock.json` and `packages/git-proxy-cli/package.json` (including the CLI's `@finos/git-proxy` dependency) to the next patch version. Note that deprecated versions need not inherit the fix.
 2. Merge the PR. If you forgot to bump `package.json`, you can generate a patch bump PR by using [this release branch bumper workflow](https://github.com/finos/git-proxy/actions/workflows/release-branch-bump.yml). Just set the branch version you want to target, such as `2.2`.
 3. Once the bugfix and the version bump is merged, a draft release will be generated in our [Releases page](https://github.com/finos/git-proxy/releases). **Publish this release** before merging additional PRs to the release branch, or performing the cascade merges. **Don't forget to uncheck the "Set as latest release" default option** when publishing the release.
 4. Once a patch has been published, you can cascade-merge the release branch into the next supported version. For example, if the currently supported versions are `2.2` and `3.0`, we will first publish a patch on `2.2` and then merge (AKA cascade) `release/2.2` into `release/3.0`. Then, we repeat the version bumping and publishing process.

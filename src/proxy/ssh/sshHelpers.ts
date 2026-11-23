@@ -214,6 +214,7 @@ export async function createKnownHostsFile(tempDir: string, sshUrl: string): Pro
   } catch (error) {
     throw new Error(
       `Failed to verify host key for ${hostname}: ${error instanceof Error ? error.message : String(error)}`,
+      { cause: error },
     );
   }
 
@@ -261,7 +262,7 @@ export function convertToSSHUrl(httpsUrl: string): string {
 
     return `git@${hostname}:${pathname}`;
   } catch (error) {
-    throw new Error(`Invalid repository URL: ${httpsUrl}`);
+    throw new Error(`Invalid repository URL: ${httpsUrl}`, { cause: error });
   }
 }
 

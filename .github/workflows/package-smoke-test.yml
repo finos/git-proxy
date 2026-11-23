@@ -36,5 +36,8 @@ jobs:
       - name: Build
         run: npm run build
 
+      - name: Build git-proxy-cli workspace
+        run: npm run build -w packages/git-proxy-cli
+
       - name: Smoke test build
         run: bash ./scripts/package-smoke-test.sh --no-clean-build
