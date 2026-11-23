@@ -201,11 +201,13 @@ export class SSHServer {
 
     client.on('end', () => {
       console.log(`[SSH] Client disconnected from ${clientIp}`);
+      clientWithUser.disconnected = true;
       clearTimeout(connectionTimeout);
     });
 
     client.on('close', () => {
       console.log(`[SSH] Client connection closed from ${clientIp}`);
+      clientWithUser.disconnected = true;
       clearTimeout(connectionTimeout);
     });
 
@@ -624,6 +626,11 @@ export class SSHServer {
           throw new Error(message);
         }
 
+        if (client.disconnected) {
+          console.log('[SSH] Client disconnected before the push could be forwarded');
+          return;
+        }
+
         console.log(`[SSH] Security chain passed, forwarding to GitHub`);
         await forwardPackDataToRemote(
           command,
@@ -638,6 +645,10 @@ export class SSHServer {
           `[SSH] Chain execution failed for user ${client.authenticatedUser?.username}:`,
           chainError,
         );
+        if (client.disconnected) {
+          console.log('[SSH] Client already disconnected, skipping error response');
+          return;
+        }
         const errorMessage = chainError instanceof Error ? chainError.message : String(chainError);
         stream.stderr.write(`Access denied: ${errorMessage}\n`);
         stream.exit(1);

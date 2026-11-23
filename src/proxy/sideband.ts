@@ -187,6 +187,10 @@ export class SidebandProgressWriter implements ProgressWriter {
     if (!this.active) {
       return;
     }
+    if (this.res.writableEnded || this.res.destroyed) {
+      this.active = false;
+      return;
+    }
     try {
       this.start();
       const payload = text.endsWith('\n') ? text : `${text}\n`;

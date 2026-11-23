@@ -69,4 +69,5 @@ export interface ClientWithUser extends ssh2.Connection, SSH2ConnectionInternals
   agentForwardingEnabled?: boolean;
   agentChannel?: ssh2.Channel;
   agentProxy?: SSHAgentProxy;
+  disconnected?: boolean; // cancels ongoing operations when client connection is closed
 }
