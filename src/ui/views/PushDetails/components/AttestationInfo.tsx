@@ -19,6 +19,7 @@ import { DateTime } from 'luxon';
 import { Banner, Text } from '@primer/react';
 import UserDisplayLink from '../../../components/UserDisplayLink/UserDisplayLink';
 import { PushActionView } from '../../../types';
+import { parseReviewTimestamp } from '../../../utils/parseReviewTimestamp';
 
 interface AttestationInfoProps {
   push: PushActionView;
@@ -30,7 +31,7 @@ const AttestationInfo = ({ push }: AttestationInfoProps) => {
   }
 
   const att = push.attestation;
-  const ts = DateTime.fromMillis(Number(att.timestamp));
+  const ts = parseReviewTimestamp(att.timestamp);
   const tsTitle = ts.toFormat('cccc, MMMM d yyyy, h:mm:ss a');
   const presetDisplayName = att.reviewer.displayName?.trim() || undefined;
 

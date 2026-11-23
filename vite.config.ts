@@ -14,13 +14,31 @@
  * limitations under the License.
  */
 
+import { createRequire } from 'node:module';
+import { dirname, join } from 'node:path';
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vite';
 
+const require = createRequire(import.meta.url);
+
+// force ESM browser entry point for html-dom-parser 8 compatibility
+const htmlDomParserBrowser = join(
+  dirname(require.resolve('html-dom-parser/package.json')),
+  'esm/client/html-to-dom.mjs',
+);
+
 export default defineConfig({
   build: {
     outDir: 'dist/build',
+  },
+  resolve: {
+    alias: {
+      'html-dom-parser': htmlDomParserBrowser,
+    },
+  },
+  optimizeDeps: {
+    include: ['html-react-parser', 'html-dom-parser', 'domhandler'],
   },
   server: {
     port: 3000,

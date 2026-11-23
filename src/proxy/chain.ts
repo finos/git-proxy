@@ -73,6 +73,7 @@ const tagPushChainElements: ChainElement[] = [
 const pullActionChainElements: ChainElement[] = [
   proc.push.checkRepoInAuthorisedList,
   PullPhase.AFTER_AUTHORISATION,
+  PullPhase.AFTER_CHECKOUT,
 ];
 
 const defaultActionChainElements: ChainElement[] = [proc.push.checkRepoInAuthorisedList];
@@ -137,7 +138,6 @@ const getProgressMessage = (fn: ProcessorExec): string => {
 
 export const executeChain = async (req: Request, res: Response): Promise<Action> => {
   let action: Action = {} as Action;
-  let checkoutCleanUpRequired = false;
 
   try {
     // 1) Initialize basic action fields
@@ -154,6 +154,7 @@ export const executeChain = async (req: Request, res: Response): Promise<Action>
     const actionFns = await getChain(action);
 
     let collectedErrors = false;
+    const executed: ProcessorExec[] = [];
     const progress = createProgressWriter(res, action);
 
     // 4) Execute each step in the selected chain
@@ -167,6 +168,7 @@ export const executeChain = async (req: Request, res: Response): Promise<Action>
 
       const stepsBefore = action.steps?.length ?? 0;
       action = await fn(req, action);
+      executed.push(fn);
 
       if (action.allowPush) {
         break;
@@ -190,12 +192,6 @@ export const executeChain = async (req: Request, res: Response): Promise<Action>
           break;
         }
       }
-
-      if (fn === proc.push.pullRemote) {
-        //if the pull was successful then record the fact we need to clean it up again
-        // pullRemote should cleanup unsuccessful clones itself
-        checkoutCleanUpRequired = true;
-      }
     }
 
     if (collectedErrors) {
@@ -204,13 +200,23 @@ export const executeChain = async (req: Request, res: Response): Promise<Action>
         action.errorMessage = combinedMessage;
       }
     }
+
+    if (action.continue()) {
+      for (const fn of executed) {
+        try {
+          await fn.onChainSuccess?.(req, action);
+        } catch (error: unknown) {
+          handleErrorAndLog(error, `onChainSuccess failed for ${fn.displayName ?? 'plugin'}`);
+        }
+      }
+    }
   } catch (error: unknown) {
     const msg = handleErrorAndLog(error, 'An unexpected error occurred when executing the chain');
     action.error = true;
     action.errorMessage = msg;
   } finally {
-    //clean up the clone created
-    if (checkoutCleanUpRequired) {
+    // If a clone was created, clean it up
+    if (action.proxyGitPath) {
       action = await proc.post.clearBareClone(req, action);
     }
 
@@ -292,6 +298,7 @@ const toPluginExec = (plugin: ActionPlugin): ProcessorExec =>
   Object.assign((req: Request, action: Action) => plugin.exec(req, action), {
     displayName: plugin.displayName ?? `${plugin.constructor.name}.exec`,
     isCollectible: plugin.isCollectible ?? false,
+    onChainSuccess: plugin.onChainSuccess?.bind(plugin),
   });
 
 const filterPushPluginsByChain = (plugins: readonly PushActionPlugin[], chainName: PushChainName) =>

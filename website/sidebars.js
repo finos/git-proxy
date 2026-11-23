@@ -37,6 +37,7 @@ module.exports = {
       ],
     },
     'deployment',
+    'migrations',
     'upgrading-to-v2',
     {
       type: 'category',

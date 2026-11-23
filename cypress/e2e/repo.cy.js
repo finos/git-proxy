@@ -15,7 +15,6 @@
  */
 
 describe('Repo', () => {
-  let cookies;
   let repoName;
 
   before(() => {
@@ -107,10 +106,10 @@ describe('Repo', () => {
       // Create a new repo
       cy.getCSRFToken().then((csrfToken) => {
         repoName = `${Date.now()}`;
-        const gitProxyUrl = Cypress.env('GIT_PROXY_URL') || 'http://localhost:8000';
+        const gitProxyUrl = Cypress.expose('GIT_PROXY_URL') || 'http://localhost:8000';
         cloneURL = `${gitProxyUrl}/github.com/cypress-test/${repoName}.git`;
 
-        const apiBaseUrl = Cypress.env('API_BASE_URL') || Cypress.config('baseUrl');
+        const apiBaseUrl = Cypress.expose('API_BASE_URL') || Cypress.config('baseUrl');
         cy.request({
           method: 'POST',
           url: `${apiBaseUrl}/api/v1/repo`,
@@ -120,7 +119,7 @@ describe('Repo', () => {
             url: `https://github.com/cypress-test/${repoName}.git`,
           },
           headers: {
-            cookie: cookies?.join('; ') || '',
+            cookie: '',
             'X-CSRF-TOKEN': csrfToken,
           },
         }).then((res) => {
@@ -160,9 +159,9 @@ describe('Repo', () => {
       cy.getCSRFToken().then((csrfToken) => {
         cy.request({
           method: 'DELETE',
-          url: `${Cypress.env('API_BASE_URL') || Cypress.config('baseUrl')}/api/v1/repo/${repoId}/delete`,
+          url: `${Cypress.expose('API_BASE_URL') || Cypress.config('baseUrl')}/api/v1/repo/${repoId}/delete`,
           headers: {
-            cookie: cookies?.join('; ') || '',
+            cookie: '',
             'X-CSRF-TOKEN': csrfToken,
           },
         });
