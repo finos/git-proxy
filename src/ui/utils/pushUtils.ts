@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import moment from 'moment';
+import { DateTime } from 'luxon';
 import { CommitData, PushData, TagData } from '../../types/models';
 import { trimPrefixRefsHeads, trimTrailingDotGit } from '../../db/helper';
 
@@ -34,6 +34,10 @@ export const isTagPush = (pushData: PushData): boolean => {
  */
 const isTagData = (data: CommitData | TagData): data is TagData => 'tagName' in data;
 
+/** Renders a Unix timestamp the way the rest of the push views render timestamps. */
+const formatUnixSeconds = (seconds: number): string =>
+  DateTime.fromSeconds(seconds).toLocaleString(DateTime.DATETIME_MED);
+
 /**
  * Gets the display timestamp for a push (handles both commits and tags)
  * @param {CommitData | TagData | null | undefined} data - The commit or tag data
@@ -43,11 +47,11 @@ export const getDisplayTimestamp = (data?: CommitData | TagData | null): string 
   if (!data) return 'N/A';
 
   if (isTagData(data)) {
-    return data.timestamp ? moment.unix(parseInt(data.timestamp)).toString() : 'N/A';
+    return data.timestamp ? formatUnixSeconds(parseInt(data.timestamp)) : 'N/A';
   }
 
   const timestamp = data.commitTimestamp || data.commitTs;
-  return timestamp ? moment.unix(timestamp).toString() : 'N/A';
+  return timestamp ? formatUnixSeconds(timestamp) : 'N/A';
 };
 
 /**
