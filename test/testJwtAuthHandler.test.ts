@@ -187,6 +187,56 @@ describe('JWT', () => {
       assignRoles({} as RoleMapping, payload, user);
       expect(user.admin).toBeUndefined();
     });
+
+    it('should assign role only when every claim in the mapping matches', () => {
+      const mapping = { admin: { groups: 'admins', tenant: 'corp' } };
+
+      const matchingUser: Record<string, any> = {};
+      assignRoles(mapping, { groups: 'admins', tenant: 'corp' }, matchingUser);
+      expect(matchingUser.admin).toBe(true);
+
+      const partialUser: Record<string, any> = {};
+      assignRoles(mapping, { groups: 'admins', tenant: 'other' }, partialUser);
+      expect(partialUser.admin).toBeUndefined();
+
+      const missingClaimUser: Record<string, any> = {};
+      assignRoles(mapping, { groups: 'admins' }, missingClaimUser);
+      expect(missingClaimUser.admin).toBeUndefined();
+    });
+
+    it('should not depend on the order of claims in the mapping', () => {
+      const user: Record<string, any> = {};
+      const mapping = { admin: { tenant: 'corp', groups: 'admins' } };
+
+      assignRoles(mapping, { groups: 'admins', tenant: 'other' }, user);
+      expect(user.admin).toBeUndefined();
+    });
+
+    it('should match array-valued claims that contain the expected value', () => {
+      const mapping = { admin: { groups: 'admins' } };
+
+      const memberUser: Record<string, any> = {};
+      assignRoles(mapping, { groups: ['devs', 'admins'] }, memberUser);
+      expect(memberUser.admin).toBe(true);
+
+      const nonMemberUser: Record<string, any> = {};
+      assignRoles(mapping, { groups: ['devs'] }, nonMemberUser);
+      expect(nonMemberUser.admin).toBeUndefined();
+    });
+
+    it('should never assign a role with an empty claim mapping', () => {
+      const user: Record<string, any> = {};
+
+      assignRoles({ admin: {} }, { sub: 'user123' }, user);
+      expect(user.admin).toBeUndefined();
+    });
+
+    it('should not assign a role from the shipped placeholder mapping', () => {
+      const user: Record<string, any> = {};
+
+      assignRoles({ admin: { '': '' } }, { sub: 'user123', '': '' }, user);
+      expect(user.admin).toBeUndefined();
+    });
   });
 
   describe('jwtAuthHandler', () => {
