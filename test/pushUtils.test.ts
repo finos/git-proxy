@@ -15,6 +15,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
+import { DateTime } from 'luxon';
 import {
   isTagPush,
   getDisplayTimestamp,
@@ -92,14 +93,19 @@ describe('pushUtils', () => {
   });
 
   describe('getDisplayTimestamp', () => {
+    // Rendered in the running machine's zone, so the expectation is derived
+    // rather than hard-coded to a UTC string.
+    const rendered = (seconds: number) =>
+      DateTime.fromSeconds(seconds).toLocaleString(DateTime.DATETIME_MED);
+
     it('returns tag timestamp when tagData is passed', () => {
       const result = getDisplayTimestamp(mockTagData[0] as any);
-      expect(result).toContain('2022');
+      expect(result).toBe(rendered(1640995300));
     });
 
     it('returns commit timestamp when commitData is passed', () => {
       const result = getDisplayTimestamp(mockCommitData[0] as any);
-      expect(result).toContain('2022');
+      expect(result).toBe(rendered(1640995200));
     });
 
     it('returns N/A when null', () => {
@@ -118,7 +124,8 @@ describe('pushUtils', () => {
         commitTimestamp: 1640995200,
       };
       const result = getDisplayTimestamp(commitWithBothTimestamps as any);
-      expect(result).toContain('2022');
+      expect(result).toBe(rendered(1640995200));
+      expect(result).not.toBe(rendered(1640995100));
     });
   });
 
