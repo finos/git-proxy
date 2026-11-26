@@ -14,10 +14,11 @@
  * limitations under the License.
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import fs from 'fs';
 import path from 'path';
 import { CacheManager } from '../../src/proxy/processors/push-action/cache-manager';
+import * as config from '../../src/config';
 
 describe('CacheManager', () => {
   let testCacheDir: string;
@@ -283,6 +284,41 @@ describe('CacheManager', () => {
       // Once released it is fair game again
       const result = await cacheManager.enforceLimits();
       expect(result.removedRepos).toEqual(['busy.git']);
+    });
+  });
+
+  describe('configuration', () => {
+    const userConfig = {
+      cacheDir: '/custom/cache',
+      maxSizeGB: 5,
+      maxRepositories: 7,
+      gitTimeoutSeconds: 30,
+    };
+
+    afterEach(() => vi.restoreAllMocks());
+
+    it('should follow the config loaded after it was created', () => {
+      // Like the shared instance, created on import before the user config is read
+      const manager = new CacheManager();
+      vi.spyOn(config, 'getCacheConfig').mockReturnValue(userConfig);
+
+      expect(manager.getConfig()).toEqual({
+        repoCacheDir: '/custom/cache',
+        maxSizeGB: 5,
+        maxRepositories: 7,
+        gitTimeoutSeconds: 30,
+      });
+    });
+
+    it('should prefer constructor arguments over the config', () => {
+      vi.spyOn(config, 'getCacheConfig').mockReturnValue(userConfig);
+
+      expect(new CacheManager('/override', 1).getConfig()).toEqual({
+        repoCacheDir: '/override',
+        maxSizeGB: 1,
+        maxRepositories: 7,
+        gitTimeoutSeconds: 30,
+      });
     });
   });
 

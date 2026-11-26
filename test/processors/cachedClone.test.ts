@@ -283,12 +283,12 @@ describe('performCachedClone', () => {
     let originalMax: number;
 
     beforeEach(() => {
-      originalMax = (cacheManager as any).maxSizeGB;
-      (cacheManager as any).maxSizeGB = 1 / (1024 * 1024 * 1024); // 1 byte
+      originalMax = (cacheManager as any).overrides.maxSizeGB;
+      (cacheManager as any).overrides.maxSizeGB = 1 / (1024 * 1024 * 1024); // 1 byte
     });
 
     afterEach(() => {
-      (cacheManager as any).maxSizeGB = originalMax;
+      (cacheManager as any).overrides.maxSizeGB = originalMax;
     });
 
     it('keeps the mirror the push just used and warns', async () => {

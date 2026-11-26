@@ -28,26 +28,27 @@ export interface CacheStats {
   }>;
 }
 
+export interface CacheSettings {
+  repoCacheDir: string;
+  maxSizeGB: number;
+  maxRepositories: number;
+  gitTimeoutSeconds: number;
+}
+
 export class CacheManager {
-  private repoCacheDir: string;
-  private maxSizeGB: number;
-  private maxRepositories: number;
-  private gitTimeoutSeconds: number;
+  private overrides: Partial<CacheSettings>;
   private mutex: Promise<void> = Promise.resolve();
   private repoLocks = new Map<string, Promise<void>>();
   private activeRepos = new Map<string, number>();
   private sizes = new Map<string, number>();
 
   constructor(
-    repoCacheDir: string = './.remote/cache',
-    maxSizeGB: number = 2,
-    maxRepositories: number = 50,
-    gitTimeoutSeconds: number = 600,
+    repoCacheDir?: string,
+    maxSizeGB?: number,
+    maxRepositories?: number,
+    gitTimeoutSeconds?: number,
   ) {
-    this.repoCacheDir = repoCacheDir;
-    this.maxSizeGB = maxSizeGB;
-    this.maxRepositories = maxRepositories;
-    this.gitTimeoutSeconds = gitTimeoutSeconds;
+    this.overrides = { repoCacheDir, maxSizeGB, maxRepositories, gitTimeoutSeconds };
   }
 
   /**
@@ -109,7 +110,7 @@ export class CacheManager {
    * Mark a repository as just used: bump its mtime for LRU and re-measure its size
    */
   async touchRepository(repoName: string): Promise<void> {
-    const repoPath = path.join(this.repoCacheDir, repoName);
+    const repoPath = path.join(this.getConfig().repoCacheDir, repoName);
     if (!fs.existsSync(repoPath)) {
       return;
     }
@@ -128,7 +129,8 @@ export class CacheManager {
    * Sizes are measured once per repository and then only refreshed by touchRepository().
    */
   async getCacheStats(): Promise<CacheStats> {
-    if (!fs.existsSync(this.repoCacheDir)) {
+    const { repoCacheDir } = this.getConfig();
+    if (!fs.existsSync(repoCacheDir)) {
       return {
         totalRepositories: 0,
         totalSizeBytes: 0,
@@ -139,12 +141,12 @@ export class CacheManager {
     const repositories: Array<{ name: string; sizeBytes: number; lastAccessed: Date }> = [];
     let totalSizeBytes = 0;
 
-    const entries = await fs.promises.readdir(this.repoCacheDir, { withFileTypes: true });
+    const entries = await fs.promises.readdir(repoCacheDir, { withFileTypes: true });
 
     for (const entry of entries) {
       // Dot-prefixed folders are staging clones still being built, not cached repos
       if (entry.isDirectory() && !entry.name.startsWith('.')) {
-        const repoPath = path.join(this.repoCacheDir, entry.name);
+        const repoPath = path.join(repoCacheDir, entry.name);
         let sizeBytes = this.sizes.get(entry.name);
         if (sizeBytes === undefined) {
           sizeBytes = await this.getDirectorySize(repoPath);
@@ -191,7 +193,8 @@ export class CacheManager {
 
       // Check size limit - convert GB to bytes once
       let currentSizeBytes = stats.totalSizeBytes;
-      const maxSizeBytes = this.maxSizeGB * 1024 * 1024 * 1024;
+      const { maxSizeGB, maxRepositories } = this.getConfig();
+      const maxSizeBytes = maxSizeGB * 1024 * 1024 * 1024;
 
       for (const repo of reposToEvaluate) {
         if (this.activeRepos.has(repo.name) || protectedRepos.includes(repo.name)) {
@@ -200,7 +203,7 @@ export class CacheManager {
 
         const shouldRemove =
           currentSizeBytes > maxSizeBytes || // Over size limit
-          stats.totalRepositories - removedRepos.length > this.maxRepositories; // Over count limit
+          stats.totalRepositories - removedRepos.length > maxRepositories; // Over count limit
 
         if (shouldRemove) {
           await this.removeRepository(repo.name);
@@ -220,7 +223,10 @@ export class CacheManager {
    * Remove specific repository from cache
    */
   private async removeRepository(repoName: string): Promise<void> {
-    await fs.promises.rm(path.join(this.repoCacheDir, repoName), { recursive: true, force: true });
+    await fs.promises.rm(path.join(this.getConfig().repoCacheDir, repoName), {
+      recursive: true,
+      force: true,
+    });
     this.sizes.delete(repoName);
   }
 
@@ -260,23 +266,18 @@ export class CacheManager {
   }
 
   /**
-   * Get cache configuration
+   * Current cache settings. Read on every call: the shared instance is created on
+   * import, before the user config file has been loaded.
    */
-  getConfig() {
+  getConfig(): CacheSettings {
+    const config = getCacheConfig();
     return {
-      maxSizeGB: this.maxSizeGB,
-      maxRepositories: this.maxRepositories,
-      repoCacheDir: this.repoCacheDir,
-      gitTimeoutSeconds: this.gitTimeoutSeconds,
+      repoCacheDir: this.overrides.repoCacheDir ?? config?.cacheDir ?? './.remote/cache',
+      maxSizeGB: this.overrides.maxSizeGB ?? config?.maxSizeGB ?? 2,
+      maxRepositories: this.overrides.maxRepositories ?? config?.maxRepositories ?? 50,
+      gitTimeoutSeconds: this.overrides.gitTimeoutSeconds ?? config?.gitTimeoutSeconds ?? 600,
     };
   }
 }
 
-// Global instance initialized with config
-const config = getCacheConfig();
-export const cacheManager = new CacheManager(
-  config?.cacheDir,
-  config?.maxSizeGB,
-  config?.maxRepositories,
-  config?.gitTimeoutSeconds,
-);
+export const cacheManager = new CacheManager();
