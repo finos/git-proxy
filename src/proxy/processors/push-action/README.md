@@ -90,12 +90,6 @@ After each cached pull, `enforceLimits()` removes the least recently used mirror
 
 The first push of a repository is slower than without the cache, because the mirror holds the full history while the uncached path makes a shallow (`depth: 1`) clone. Every later push only fetches the new commits. Results depend on network conditions and repository size.
 
-```bash
-./scripts/cache-benchmark.sh <owner/repo> [branch] [num_pushes]
-```
-
-You need push access to the repository used for the benchmark.
-
 ## Tests
 
 - `test/processors/cachedClone.test.ts` - cache keys, miss/hit/rebuild, concurrency, eviction, both cached pull classes; runs offline against a local bare remote
