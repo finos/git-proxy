@@ -250,7 +250,7 @@ describe('git-operations', () => {
     });
 
     it('never falls back to an enclosing repository', async () => {
-      // Like a corrupted mirror in ./.remote/cache inside the GitProxy checkout
+      // Like a corrupted mirror in the cache folder inside the GitProxy checkout
       childProcess.execFileSync('git', ['init', '-q', root]);
       const nested = path.join(root, '.remote', 'cache', 'm.git');
       childProcess.execFileSync('git', ['init', '--bare', '-q', nested]);

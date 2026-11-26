@@ -43,7 +43,7 @@ const { testRoot, testCacheDir } = await vi.hoisted(async () => {
   return { testRoot: root, testCacheDir: nodePath.join(root, 'cache') };
 });
 
-// Point the shared cache manager at a throwaway folder instead of ./.remote/cache
+// Point the shared cache manager at a throwaway folder instead of ./.repo-cache
 vi.mock('../../src/proxy/processors/push-action/cache-manager', async (importOriginal) => {
   const original =
     await importOriginal<typeof import('../../src/proxy/processors/push-action/cache-manager')>();

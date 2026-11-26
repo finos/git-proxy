@@ -451,7 +451,7 @@
         "cacheDir": {
           "type": "string",
           "description": "Directory path for bare repository cache",
-          "default": "./.remote/cache"
+          "default": "./.repo-cache"
         },
         "gitTimeoutSeconds": {
           "type": "number",

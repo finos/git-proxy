@@ -211,7 +211,7 @@ When using MongoDB, no additional data volumes are needed for GitProxy itself â€
 If the [repository cache](#repository-cache) is enabled, also mount its directory so the cached repositories survive container restarts:
 
 ```bash
-  -v $(pwd)/cache:/app/.remote/cache
+  -v $(pwd)/repo-cache:/app/.repo-cache
 ```
 
 ---
@@ -312,7 +312,7 @@ The cache is disabled by default. Enabling it is recommended for production:
 | ------------------- | ----------------- | -------------------------------------------------------- |
 | `maxSizeGB`         | `2`               | Least recently used mirrors are removed above this size  |
 | `maxRepositories`   | `50`              | Least recently used mirrors are removed above this count |
-| `cacheDir`          | `./.remote/cache` | Where the mirrors are stored                             |
+| `cacheDir`          | `./.repo-cache`   | Where the mirrors are stored                             |
 | `gitTimeoutSeconds` | `600`             | A git command running longer than this fails the push    |
 
 Things to know:
@@ -321,6 +321,7 @@ Things to know:
 - Requires Git 2.31 or later on the GitProxy host.
 - Size `maxSizeGB` and the disk behind `cacheDir` for the repositories you proxy. A single repository larger than `maxSizeGB` is still cached, and a warning is logged.
 - Raise `gitTimeoutSeconds` if the first clone of your largest repository takes longer than 10 minutes.
+- Keep `cacheDir` outside `./.remote`: GitProxy empties that folder on every start.
 - Do not share one `cacheDir` between several GitProxy instances: concurrent pushes are only coordinated within a single process.
 
 See the [Configuration Reference](/docs/configuration/reference) for all settings.

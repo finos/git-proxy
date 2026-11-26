@@ -107,6 +107,30 @@ export class CacheManager {
   }
 
   /**
+   * Startup housekeeping: warn when the cache would be wiped together with ./.remote
+   * and remove staging clones left behind by a crash.
+   */
+  async prepare(): Promise<void> {
+    const { repoCacheDir } = this.getConfig();
+    const fromRemote = path.relative('./.remote', repoCacheDir);
+    if (!fromRemote.startsWith('..') && !path.isAbsolute(fromRemote)) {
+      console.warn(
+        `[CacheManager] cache.cacheDir ${repoCacheDir} is inside ./.remote, which is emptied on every start`,
+      );
+    }
+
+    if (!fs.existsSync(repoCacheDir)) {
+      return;
+    }
+    for (const entry of await fs.promises.readdir(repoCacheDir)) {
+      if (entry.startsWith('.staging-')) {
+        console.log(`[CacheManager] Removing leftover staging clone ${entry}`);
+        await fs.promises.rm(path.join(repoCacheDir, entry), { recursive: true, force: true });
+      }
+    }
+  }
+
+  /**
    * Mark a repository as just used: bump its mtime for LRU and re-measure its size
    */
   async touchRepository(repoName: string): Promise<void> {
@@ -272,7 +296,7 @@ export class CacheManager {
   getConfig(): CacheSettings {
     const config = getCacheConfig();
     return {
-      repoCacheDir: this.overrides.repoCacheDir ?? config?.cacheDir ?? './.remote/cache',
+      repoCacheDir: this.overrides.repoCacheDir ?? config?.cacheDir ?? './.repo-cache',
       maxSizeGB: this.overrides.maxSizeGB ?? config?.maxSizeGB ?? 2,
       maxRepositories: this.overrides.maxRepositories ?? config?.maxRepositories ?? 50,
       gitTimeoutSeconds: this.overrides.gitTimeoutSeconds ?? config?.gitTimeoutSeconds ?? 600,

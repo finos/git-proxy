@@ -3,6 +3,7 @@
 .vscode
 .tmp
 .remote
+.repo-cache
 .data
 logs
 *.log

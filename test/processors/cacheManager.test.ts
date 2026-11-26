@@ -16,6 +16,7 @@
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import fs from 'fs';
+import os from 'os';
 import path from 'path';
 import { CacheManager } from '../../src/proxy/processors/push-action/cache-manager';
 import * as config from '../../src/config';
@@ -220,6 +221,35 @@ describe('CacheManager', () => {
       const result = await cacheManager.enforceLimits();
       expect(result.removedRepos).toHaveLength(0);
       expect(fs.existsSync(staging)).toBe(true);
+    });
+  });
+
+  describe('prepare', () => {
+    afterEach(() => vi.restoreAllMocks());
+
+    it('should remove staging clones left by a crash and keep the mirrors', async () => {
+      fs.mkdirSync(path.join(testCacheDir, 'repo.git'));
+      fs.mkdirSync(path.join(testCacheDir, '.staging-repo.git-123'));
+
+      await cacheManager.prepare();
+
+      expect(fs.readdirSync(testCacheDir)).toEqual(['repo.git']);
+    });
+
+    it('should warn when the cache lives inside ./.remote', async () => {
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+      await new CacheManager('./.remote/cache').prepare();
+
+      expect(warn).toHaveBeenCalledWith(expect.stringContaining('inside ./.remote'));
+    });
+
+    it('should not warn for a cache outside ./.remote', async () => {
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+      await new CacheManager(path.join(os.tmpdir(), 'git-proxy-missing-cache')).prepare();
+
+      expect(warn).not.toHaveBeenCalled();
     });
   });
 

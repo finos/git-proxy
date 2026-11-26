@@ -19,19 +19,19 @@ In `proxy.config.json`:
     "enabled": true,
     "maxSizeGB": 2,
     "maxRepositories": 50,
-    "cacheDir": "./.remote/cache",
+    "cacheDir": "./.repo-cache",
     "gitTimeoutSeconds": 600
   }
 }
 ```
 
-| Option              | Default           | Meaning                                         |
-| ------------------- | ----------------- | ----------------------------------------------- |
-| `enabled`           | `false`           | Use the cached pull implementations             |
-| `maxSizeGB`         | `2`               | Total size above which LRU eviction kicks in    |
-| `maxRepositories`   | `50`              | Number of mirrors above which eviction kicks in |
-| `cacheDir`          | `./.remote/cache` | Where the bare mirrors live                     |
-| `gitTimeoutSeconds` | `600`             | Kill a git command and fail the push after this |
+| Option              | Default         | Meaning                                         |
+| ------------------- | --------------- | ----------------------------------------------- |
+| `enabled`           | `false`         | Use the cached pull implementations             |
+| `maxSizeGB`         | `2`             | Total size above which LRU eviction kicks in    |
+| `maxRepositories`   | `50`            | Number of mirrors above which eviction kicks in |
+| `cacheDir`          | `./.repo-cache` | Where the bare mirrors live                     |
+| `gitTimeoutSeconds` | `600`           | Kill a git command and fail the push after this |
 
 ## How a cached pull works
 
@@ -46,9 +46,11 @@ The mirror lives at `<cacheDir>/<host>__<project>__<repo>-<hash>`, e.g. `github.
 - **Fetch fails, mirror readable**: the error came from the remote side (network, wrong credentials, no access, timeout), so the push fails and the mirror is kept. No re-clone is attempted.
 - **Fetch fails, mirror corrupted** (git can no longer read its refs): the mirror is rebuilt. If the rebuild also fails the push fails and **the existing mirror is left untouched**.
 
-Git commands on the mirror use `--git-dir`, so a broken mirror inside another repository (such as the GitProxy checkout around `./.remote/cache`) is never mistaken for that repository.
+Git commands on the mirror use `--git-dir`, so a broken mirror inside another repository (such as the GitProxy checkout around `./.repo-cache`) is never mistaken for that repository.
 
-Every clone into the cache is done in a dot-prefixed staging folder (`.staging-<key>-<uuid>`) and only moved into place once it succeeded, so a failed or interrupted clone never leaves a half-written mirror behind. Staging folders are ignored by the cache statistics and by eviction.
+Every clone into the cache is done in a dot-prefixed staging folder (`.staging-<key>-<uuid>`) and only moved into place once it succeeded, so a failed or interrupted clone never leaves a half-written mirror behind. Staging folders are ignored by the cache statistics and by eviction, and leftovers from a crash are removed at startup.
+
+The cache lives outside `./.remote`, which GitProxy empties on every start, so the mirrors survive restarts. A `cacheDir` configured inside `./.remote` logs a warning at startup.
 
 Every push still talks to the remote with **its own** credentials, so the cache never lets a client read a repository it could not clone itself.
 

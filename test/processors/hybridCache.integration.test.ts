@@ -16,6 +16,7 @@
 
 import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
 import fs from 'fs';
+import path from 'path';
 import { exec as pullRemote } from '../../src/proxy/processors/push-action/pullRemote';
 import { exec as clearBareClone } from '../../src/proxy/processors/post-processor/clearBareClone';
 import { Action } from '../../src/proxy/actions/Action';
@@ -49,7 +50,7 @@ describe.runIf(shouldRunNetworkTests)('Hybrid Cache Integration Tests', () => {
     cacheHitAction: null,
     cacheMissDuration: 0,
     cacheHitDuration: 0,
-    bareRepoPath: `./.remote/cache/${cacheKey}`,
+    bareRepoPath: path.join(cacheManager.getConfig().repoCacheDir, cacheKey),
     inodeBefore: null,
     inodeAfter: null,
   };
@@ -184,10 +185,10 @@ describe.runIf(shouldRunNetworkTests)('Hybrid Cache Integration Tests', () => {
     it('should maintain separate bare cache and working directories', () => {
       // The shared mirrors live in the cache, the per-push working copies are
       // action-id folders created by PullRemoteBase alongside it
-      expect(fs.existsSync('./.remote/cache')).toBe(true);
+      expect(fs.existsSync(cacheManager.getConfig().repoCacheDir)).toBe(true);
 
       // Verify bare cache contains .git repositories
-      const cacheContents = fs.readdirSync('./.remote/cache');
+      const cacheContents = fs.readdirSync(cacheManager.getConfig().repoCacheDir);
       expect(cacheContents.some((name) => name.endsWith('.git'))).toBe(true);
 
       // Verify the working copies of both pushes sit outside the cache
@@ -196,7 +197,7 @@ describe.runIf(shouldRunNetworkTests)('Hybrid Cache Integration Tests', () => {
     });
 
     it('should share one bare cache for multiple working copies', () => {
-      const cacheContents = fs.readdirSync('./.remote/cache');
+      const cacheContents = fs.readdirSync(cacheManager.getConfig().repoCacheDir);
       const gitProxyRepos = cacheContents.filter((name) => name.includes('git-proxy'));
 
       // Should be only one bare cache for git-proxy
@@ -227,7 +228,7 @@ describe.runIf(shouldRunNetworkTests)('Hybrid Cache Integration Tests', () => {
       await clearBareClone(null, testData.cacheMissAction);
 
       expect(fs.existsSync(checkoutPath(actionId))).toBe(false);
-      expect(fs.existsSync('./.remote/cache')).toBe(true);
+      expect(fs.existsSync(cacheManager.getConfig().repoCacheDir)).toBe(true);
     });
   });
 });

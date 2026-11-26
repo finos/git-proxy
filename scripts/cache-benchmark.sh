@@ -62,7 +62,7 @@ mkdir -p "$TEST_DIR" && cd "$TEST_DIR"
 REPO_NAME=$(basename "$GITHUB_REPO")
 
 echo "  → Clearing cache..."
-rm -rf ../.remote/cache/* ../.remote/work/* 2>/dev/null || true
+rm -rf ../.repo-cache/* ../.remote/work/* 2>/dev/null || true
 echo -e "${GREEN}✓ Cache cleared${NC}\n"
 
 echo -e "${YELLOW}[4/5] Performing initial clone (one-time operation)...${NC}"
@@ -162,7 +162,7 @@ printf "  %-30s %10.2fs\n" "Hypothetical (no cache):" "$HYPOTHETICAL_NO_CACHE"
 printf "  %-30s %10.2fs (%.1fm)\n" "Time saved:" "$TIME_SAVED" "$TIME_SAVED_MINUTES"
 
 echo -e "\n${CYAN}${BOLD}Cache Statistics:${NC}\n"
-CACHE_DIR="../.remote/cache"
+CACHE_DIR="../.repo-cache"
 if [ -d "$CACHE_DIR" ]; then
     FINAL_CACHE_SIZE=$(du -sh "$CACHE_DIR" 2>/dev/null | cut -f1)
     FINAL_CACHE_COUNT=$(ls -1 "$CACHE_DIR" 2>/dev/null | wc -l | tr -d ' ')
