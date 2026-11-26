@@ -70,7 +70,7 @@ All git commands are run with an asynchronous `spawn`, so a long clone never blo
 
 ## Credentials
 
-HTTPS credentials are never put on the command line or in a URL. [`git-operations.ts`](./git-operations.ts) passes them to git through `GIT_CONFIG_*` environment variables as an `http.<origin>/.extraHeader` Authorization header, and resets `credential.helper` so a rejected token can never fall back to credentials stored on the proxy host. `GIT_TERMINAL_PROMPT=0` makes git fail instead of waiting for input. This requires git 2.31 or later.
+HTTPS credentials are never put on the command line or in a URL. [`git-operations.ts`](./git-operations.ts) passes them to git through `GIT_CONFIG_*` environment variables as an `http.<origin>/.extraHeader` Authorization header, and resets `credential.helper` so a rejected token can never fall back to credentials stored on the proxy host. `GIT_TERMINAL_PROMPT=0` makes git fail instead of waiting for input. This requires git 2.31 or later, which GitProxy checks at startup when the cache is enabled.
 
 ## Eviction
 

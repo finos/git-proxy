@@ -249,3 +249,23 @@ export async function isReadableRepo(dir: string): Promise<boolean> {
   const result = await runGit([`--git-dir=${dir}`, 'for-each-ref', '--count=1']);
   return result.status === 0;
 }
+
+/**
+ * Fail unless git is at least 2.31, the first release that reads GIT_CONFIG_COUNT.
+ */
+export async function checkGitVersion(): Promise<void> {
+  const output = await new Promise<string>((resolve, reject) => {
+    const proc = spawn('git', ['--version'], { stdio: ['ignore', 'pipe', 'ignore'] });
+    let stdout = '';
+    proc.stdout.on('data', (chunk) => {
+      stdout += chunk.toString();
+    });
+    proc.on('error', reject);
+    proc.on('close', () => resolve(stdout.trim()));
+  }).catch((error: Error) => `none (${error.message})`);
+
+  const [, major = 0, minor = 0] = (output.match(/(\d+)\.(\d+)/) ?? []).map(Number);
+  if (major < 2 || (major === 2 && minor < 31)) {
+    throw new Error(`The repository cache needs git 2.31 or later, found: ${output}`);
+  }
+}

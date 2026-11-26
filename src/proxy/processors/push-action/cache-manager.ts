@@ -17,6 +17,7 @@
 import fs from 'fs';
 import path from 'path';
 import { getCacheConfig } from '../../../config';
+import { checkGitVersion } from './git-operations';
 
 export interface CacheStats {
   totalRepositories: number;
@@ -107,10 +108,12 @@ export class CacheManager {
   }
 
   /**
-   * Startup housekeeping: warn when the cache would be wiped together with ./.remote
-   * and remove staging clones left behind by a crash.
+   * Startup housekeeping: check the git version, warn when the cache would be wiped
+   * together with ./.remote and remove staging clones left behind by a crash.
    */
   async prepare(): Promise<void> {
+    await checkGitVersion();
+
     const { repoCacheDir } = this.getConfig();
     const fromRemote = path.relative('./.remote', repoCacheDir);
     if (!fromRemote.startsWith('..') && !path.isAbsolute(fromRemote)) {

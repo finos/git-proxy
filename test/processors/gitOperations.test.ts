@@ -371,6 +371,46 @@ describe('git-operations', () => {
     });
   });
 
+  describe('checkGitVersion', () => {
+    const gitPrints = (output: string | Error) =>
+      spawnMock.mockImplementationOnce((() => {
+        const proc = new EventEmitter() as any;
+        proc.stdout = new EventEmitter();
+        setImmediate(() => {
+          if (output instanceof Error) {
+            proc.emit('error', output);
+            return;
+          }
+          proc.stdout.emit('data', Buffer.from(`${output}\n`));
+          proc.emit('close', 0);
+        });
+        return proc;
+      }) as any);
+
+    it.each([
+      'git version 2.31.0',
+      'git version 2.39.5 (Apple Git-154)',
+      'git version 2.45.0.windows.1',
+      'git version 3.0.0',
+    ])('accepts %s', async (output) => {
+      gitPrints(output);
+      await expect(gitOps.checkGitVersion()).resolves.toBeUndefined();
+    });
+
+    it.each(['git version 2.30.2', 'git version 1.9.5'])('rejects %s', async (output) => {
+      gitPrints(output);
+      await expect(gitOps.checkGitVersion()).rejects.toThrow(
+        `The repository cache needs git 2.31 or later, found: ${output}`,
+      );
+    });
+
+    it('rejects when git is not installed', async () => {
+      gitPrints(new Error('spawn git ENOENT'));
+
+      await expect(gitOps.checkGitVersion()).rejects.toThrow('found: none (spawn git ENOENT)');
+    });
+  });
+
   describe('cloneLocal', () => {
     it('fails with the real git error for a missing source', async () => {
       await expect(

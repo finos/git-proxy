@@ -318,7 +318,7 @@ The cache is disabled by default. Enabling it is recommended for production:
 Things to know:
 
 - Each push still authenticates against the upstream with the pushing user's own credentials, so the cache never gives anyone access to a repository they could not clone themselves.
-- Requires Git 2.31 or later on the GitProxy host.
+- Requires Git 2.31 or later on the GitProxy host. GitProxy refuses to start with an older Git while the cache is enabled.
 - Size `maxSizeGB` and the disk behind `cacheDir` for the repositories you proxy. A single repository larger than `maxSizeGB` is still cached, and a warning is logged.
 - Raise `gitTimeoutSeconds` if the first clone of your largest repository takes longer than an hour.
 - Keep `cacheDir` outside `./.remote`: GitProxy empties that folder on every start.

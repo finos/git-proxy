@@ -20,6 +20,13 @@ import os from 'os';
 import path from 'path';
 import { CacheManager } from '../../src/proxy/processors/push-action/cache-manager';
 import * as config from '../../src/config';
+import * as gitOps from '../../src/proxy/processors/push-action/git-operations';
+
+vi.mock('../../src/proxy/processors/push-action/git-operations', async (importOriginal) => {
+  const original =
+    await importOriginal<typeof import('../../src/proxy/processors/push-action/git-operations')>();
+  return { ...original, checkGitVersion: vi.fn(original.checkGitVersion) };
+});
 
 describe('CacheManager', () => {
   let testCacheDir: string;
@@ -226,6 +233,14 @@ describe('CacheManager', () => {
 
   describe('prepare', () => {
     afterEach(() => vi.restoreAllMocks());
+
+    it('should refuse to start with a git that is too old', async () => {
+      vi.mocked(gitOps.checkGitVersion).mockRejectedValueOnce(new Error('needs git 2.31'));
+      fs.mkdirSync(path.join(testCacheDir, '.staging-repo.git-123'));
+
+      await expect(cacheManager.prepare()).rejects.toThrow('needs git 2.31');
+      expect(fs.existsSync(path.join(testCacheDir, '.staging-repo.git-123'))).toBe(true);
+    });
 
     it('should remove staging clones left by a crash and keep the mirrors', async () => {
       fs.mkdirSync(path.join(testCacheDir, 'repo.git'));
