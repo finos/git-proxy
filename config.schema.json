@@ -441,7 +441,7 @@
         "maxSizeGB": {
           "type": "number",
           "description": "Maximum cache size in gigabytes",
-          "default": 2
+          "default": 10
         },
         "maxRepositories": {
           "type": "number",

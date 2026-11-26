@@ -310,7 +310,7 @@ The cache is disabled by default. Enabling it is recommended for production:
 
 | Setting             | Default           | Description                                              |
 | ------------------- | ----------------- | -------------------------------------------------------- |
-| `maxSizeGB`         | `2`               | Least recently used mirrors are removed above this size  |
+| `maxSizeGB`         | `10`              | Least recently used mirrors are removed above this size  |
 | `maxRepositories`   | `50`              | Least recently used mirrors are removed above this count |
 | `cacheDir`          | `./.repo-cache`   | Where the mirrors are stored                             |
 | `gitTimeoutSeconds` | `3600`            | A git command running longer than this fails the push    |
@@ -319,7 +319,8 @@ Things to know:
 
 - Each push still authenticates against the upstream with the pushing user's own credentials, so the cache never gives anyone access to a repository they could not clone themselves.
 - Requires Git 2.31 or later on the GitProxy host. GitProxy refuses to start with an older Git while the cache is enabled.
-- Size `maxSizeGB` and the disk behind `cacheDir` for the repositories you proxy. A single repository larger than `maxSizeGB` is still cached, and a warning is logged.
+- The first push of a repository is slower than without the cache: the mirror downloads the full history, while the uncached path makes a shallow clone. Every later push only fetches the new commits.
+- Each mirror takes about as much disk as the repository's full history. Size `maxSizeGB` and the disk behind `cacheDir` for the repositories you proxy. A single repository larger than `maxSizeGB` is still cached, and a warning is logged.
 - Raise `gitTimeoutSeconds` if the first clone of your largest repository takes longer than an hour.
 - Keep `cacheDir` outside `./.remote`: GitProxy empties that folder on every start.
 - Do not share one `cacheDir` between several GitProxy instances: concurrent pushes are only coordinated within a single process.

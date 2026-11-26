@@ -300,7 +300,7 @@ export class CacheManager {
     const config = getCacheConfig();
     return {
       repoCacheDir: this.overrides.repoCacheDir ?? config?.cacheDir ?? './.repo-cache',
-      maxSizeGB: this.overrides.maxSizeGB ?? config?.maxSizeGB ?? 2,
+      maxSizeGB: this.overrides.maxSizeGB ?? config?.maxSizeGB ?? 10,
       maxRepositories: this.overrides.maxRepositories ?? config?.maxRepositories ?? 50,
       gitTimeoutSeconds: this.overrides.gitTimeoutSeconds ?? config?.gitTimeoutSeconds ?? 3600,
     };

@@ -223,7 +223,7 @@
   },
   "cache": {
     "enabled": false,
-    "maxSizeGB": 2,
+    "maxSizeGB": 10,
     "maxRepositories": 50,
     "cacheDir": "./.repo-cache",
     "gitTimeoutSeconds": 3600

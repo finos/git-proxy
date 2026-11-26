@@ -17,7 +17,7 @@ In `proxy.config.json`:
 {
   "cache": {
     "enabled": true,
-    "maxSizeGB": 2,
+    "maxSizeGB": 10,
     "maxRepositories": 50,
     "cacheDir": "./.repo-cache",
     "gitTimeoutSeconds": 3600
@@ -28,7 +28,7 @@ In `proxy.config.json`:
 | Option              | Default         | Meaning                                         |
 | ------------------- | --------------- | ----------------------------------------------- |
 | `enabled`           | `false`         | Use the cached pull implementations             |
-| `maxSizeGB`         | `2`             | Total size above which LRU eviction kicks in    |
+| `maxSizeGB`         | `10`            | Total size above which LRU eviction kicks in    |
 | `maxRepositories`   | `50`            | Number of mirrors above which eviction kicks in |
 | `cacheDir`          | `./.repo-cache` | Where the bare mirrors live                     |
 | `gitTimeoutSeconds` | `3600`          | Kill a git command and fail the push after this |
@@ -78,15 +78,15 @@ After each cached pull, `enforceLimits()` removes the least recently used mirror
 
 ## Performance
 
-Measured with the Backstage repository (10 consecutive pushes: 1 cold + 9 warm) using [`scripts/cache-benchmark.sh`](../../../../scripts/cache-benchmark.sh):
+`pullRemote` step for a one-commit push to backstage/backstage (8.7 GB pack), against a local smart-HTTP server, medians of 3 runs (the miss ran once) ([full benchmark](https://gist.github.com/jescalada/9c0e93aec698cc5a73f3f53c2de9b3ff)):
 
-| Metric              | Without cache | With cache | Improvement |
-| ------------------- | ------------- | ---------- | ----------- |
-| **Cold push**       | 20.63s        | 17.58s     | 1.2x faster |
-| **Warm push (avg)** | 19.88s        | **6.68s**  | **3x**      |
-| **Std deviation**   | 0.99s         | 0.19s      | 5x steadier |
+| Metric                       | Without cache | Cache miss (first push) | Cache hit  |
+| ---------------------------- | ------------- | ----------------------- | ---------- |
+| **Duration**                 | 145 s         | 776 s                   | **6.4 s**  |
+| **Longest event-loop stall** | 9,040 ms      | 88 ms                   | **75 ms**  |
+| **Peak memory (RSS)**        | 3,353 MB      | 97 MB                   | **102 MB** |
 
-Results depend on network conditions and repository size. Note that the cold push of a large repository downloads its full history, while the uncached path uses a shallow (`depth: 1`) clone.
+The first push of a repository is slower than without the cache, because the mirror holds the full history while the uncached path makes a shallow (`depth: 1`) clone. Every later push only fetches the new commits. Results depend on network conditions and repository size.
 
 ```bash
 ./scripts/cache-benchmark.sh <owner/repo> [branch] [num_pushes]
