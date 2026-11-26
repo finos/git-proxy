@@ -52,7 +52,7 @@ export class PullRemoteSSHCached extends PullRemoteSSH {
       return await performCachedClone(action, step, access, 'ssh-agent-forwarding');
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      throw new Error(`SSH clone failed: ${message}`);
+      throw new Error(`SSH clone failed: ${message}`, { cause: error });
     } finally {
       await access.cleanup!();
     }
