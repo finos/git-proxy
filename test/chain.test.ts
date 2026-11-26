@@ -595,6 +595,137 @@ describe('proxy chain', function () {
 
       expect(dbSpy).not.toHaveBeenCalled();
     });
+
+    describe('plugins that run after a pre-receive auto-approval', () => {
+      const afterDiffPlugin = (exec: (req: any, action: any) => Promise<any>) => {
+        chain.chainPluginLoader = {
+          pushPlugins: [
+            {
+              exec,
+              phase: PushPhase.AFTER_DIFF,
+              displayName: 'externalServicePlugin',
+              isCollectible: true,
+            },
+          ],
+          pullPlugins: [],
+        };
+      };
+
+      beforeEach(() => {
+        mockPushProcessors.preReceive.mockImplementation(async (req: any, action: any) => {
+          action.autoApproved = true;
+          return action;
+        });
+      });
+
+      it('should not auto-approve a push whose AFTER_DIFF plugin failed', async () => {
+        setupPushAction();
+        afterDiffPlugin(failStep('Client disconnected before the DLP scan completed'));
+        const dbSpy = vi.spyOn(db, 'authorise');
+
+        const result = await chain.executeChain({});
+
+        expect(mockPushProcessors.preReceive).toHaveBeenCalled();
+        expect(result.error).toBe(true);
+        expect(result.errorMessage).toBeUndefined(); // single failure keeps its step message
+        expect(result.steps[0].errorMessage).toBe(
+          'Client disconnected before the DLP scan completed',
+        );
+        expect(mockPushProcessors.blockForAuth).not.toHaveBeenCalled();
+        expect(dbSpy).not.toHaveBeenCalled();
+      });
+
+      it('should still run the remaining collectible checks after the plugin failed', async () => {
+        setupPushAction();
+        afterDiffPlugin(failStep('DLP scan blocked push: Contains sensitive data'));
+        mockPushProcessors.scanDiff.mockImplementation(failStep('secret detected in diff'));
+
+        const result = await chain.executeChain({});
+
+        expect(mockPushProcessors.gitleaks).toHaveBeenCalled();
+        expect(result.errorMessage).toContain('The following 2 checks failed:');
+        expect(result.errorMessage).toContain('Contains sensitive data');
+      });
+
+      it('should auto-approve when the AFTER_DIFF plugin passed', async () => {
+        setupPushAction();
+        afterDiffPlugin(async (req: any, action: any) => action);
+        const dbSpy = vi.spyOn(db, 'authorise');
+
+        await chain.executeChain({});
+
+        expect(mockPushProcessors.blockForAuth).toHaveBeenCalled();
+        expect(dbSpy).toHaveBeenCalledOnce();
+      });
+    });
+  });
+
+  describe('event dispatch', () => {
+    const captureEvents = async () => {
+      const { ProxyEventRegistry } = await import('../src/eventHandlers/registry');
+      const { EventDispatcher, setEventDispatcher } =
+        await import('../src/eventHandlers/dispatcher');
+      const events: { phase: string; actionId: string }[] = [];
+      const record = (details: { phase: string; actionId: string }) => {
+        events.push({ phase: details.phase, actionId: details.actionId });
+      };
+      const registry = new ProxyEventRegistry();
+      for (const builder of [registry.onPush(), registry.onPull()]) {
+        builder
+          .onStarted(record)
+          .onCompleted(record)
+          .onPendingReview(record)
+          .onError(record)
+          .onPermissionDenied(record);
+      }
+      setEventDispatcher(new EventDispatcher(registry));
+      return events;
+    };
+
+    afterEach(async () => {
+      const { resetEventDispatcher } = await import('../src/eventHandlers/dispatcher');
+      resetEventDispatcher();
+    });
+
+    it('dispatches started after parsePush so push actionId matches the terminal phase', async () => {
+      const events = await captureEvents();
+      const action = new Action(
+        '1700000000000',
+        RequestType.PUSH,
+        'POST',
+        Date.now(),
+        'https://github.com/owner/repo.git',
+      );
+      mockPreProcessors.parseAction.mockResolvedValue(action);
+      mockPreProcessors.parsePush.mockImplementation(async (_req: any, a: Action) => {
+        a.setCommit('aaa', 'bbb');
+        return a;
+      });
+
+      await chain.executeChain({}, {});
+
+      expect(events.map((e) => e.phase)).toEqual(['started', 'completed']);
+      expect(events[0].actionId).toBe(action.id);
+      expect(events[0].actionId).not.toBe('1700000000000');
+      expect(events[1].actionId).toBe(events[0].actionId);
+    });
+
+    it('uses the same actionId for started and the terminal phase on pulls', async () => {
+      const events = await captureEvents();
+      const action = new Action(
+        '1700000000001',
+        RequestType.PULL,
+        'GET',
+        Date.now(),
+        'https://github.com/owner/repo.git',
+      );
+      mockPreProcessors.parseAction.mockResolvedValue(action);
+
+      await chain.executeChain({}, {});
+
+      expect(events.map((e) => e.phase)).toEqual(['started', 'completed']);
+      expect(events[1].actionId).toBe(events[0].actionId);
+    });
   });
 
   it('returns pullActionChain for pull actions', async () => {
@@ -702,6 +833,91 @@ describe('proxy chain', function () {
     action.actionType = PushType.TAG;
     const tagChain = await chain.getChain(action);
     expect(tagChain).toEqual(chain.tagPushChain);
+  });
+
+  it('tagPushChain runs checkHiddenCommits after writePack and before checkIfWaitingAuth', async () => {
+    await chain.getChain({ type: RequestType.PUSH, actionType: PushType.TAG });
+
+    const tagChain = chain.tagPushChain as unknown[];
+    const writePackIdx = tagChain.indexOf(mockPushProcessors.writePack);
+    const hiddenIdx = tagChain.indexOf(mockPushProcessors.checkHiddenCommits);
+    const waitingAuthIdx = tagChain.indexOf(mockPushProcessors.checkIfWaitingAuth);
+
+    expect(writePackIdx).toBeGreaterThanOrEqual(0);
+    expect(hiddenIdx).toBeGreaterThan(writePackIdx);
+    expect(waitingAuthIdx).toBeGreaterThan(hiddenIdx);
+    expect(tagChain).toContain(mockPushProcessors.checkHiddenCommits);
+    expect(tagChain).not.toContain(mockPushProcessors.getDiff);
+    expect(tagChain).not.toContain(mockPushProcessors.gitleaks);
+    expect(tagChain).not.toContain(mockPushProcessors.scanDiff);
+    expect(tagChain).not.toContain(mockPushProcessors.checkAuthorEmails);
+  });
+
+  it('executeChain runs checkHiddenCommits for tag pushes', async () => {
+    const req = {};
+    const continuingAction = {
+      type: RequestType.PUSH,
+      actionType: PushType.TAG,
+      continue: () => true,
+      allowPush: false,
+      proxyGitPath: './.remote/test',
+    };
+    mockPreProcessors.parseAction.mockResolvedValue({ type: RequestType.PUSH });
+    mockPreProcessors.parsePush.mockResolvedValue(continuingAction);
+
+    const result = await chain.executeChain(req);
+
+    expect(mockPushProcessors.resolveUserFromToken).toHaveBeenCalled();
+    expect(mockPushProcessors.checkRepoInAuthorisedList).toHaveBeenCalled();
+    expect(mockPushProcessors.checkUserPushPermission).toHaveBeenCalled();
+    expect(mockPushProcessors.checkIfWaitingAuth).toHaveBeenCalled();
+    expect(mockPushProcessors.checkMessages).toHaveBeenCalled();
+    expect(mockPushProcessors.pullRemote).toHaveBeenCalled();
+    expect(mockPushProcessors.writePack).toHaveBeenCalled();
+    expect(mockPushProcessors.checkHiddenCommits).toHaveBeenCalled();
+    expect(mockPushProcessors.preReceive).toHaveBeenCalled();
+    expect(mockPushProcessors.blockForAuth).toHaveBeenCalled();
+
+    // branch-only processors must not run on the tag path
+    expect(mockPushProcessors.checkEmptyBranch).not.toHaveBeenCalled();
+    expect(mockPushProcessors.checkAuthorEmails).not.toHaveBeenCalled();
+    expect(mockPushProcessors.getDiff).not.toHaveBeenCalled();
+    expect(mockPushProcessors.gitleaks).not.toHaveBeenCalled();
+    expect(mockPushProcessors.scanDiff).not.toHaveBeenCalled();
+
+    expect(mockPostProcessors.audit).toHaveBeenCalled();
+    expect(mockPostProcessors.clearBareClone).toHaveBeenCalled();
+    expect(result.type).toBe(RequestType.PUSH);
+  });
+
+  it('executeChain stops a tag push when checkHiddenCommits blocks', async () => {
+    const req = {};
+    mockPreProcessors.parseAction.mockResolvedValue({ type: RequestType.PUSH });
+    mockPreProcessors.parsePush.mockResolvedValue({
+      type: RequestType.PUSH,
+      actionType: PushType.TAG,
+      continue: () => true,
+      allowPush: false,
+      proxyGitPath: './.remote/test',
+    });
+
+    mockPushProcessors.checkHiddenCommits.mockResolvedValue({
+      type: RequestType.PUSH,
+      actionType: PushType.TAG,
+      continue: () => false,
+      allowPush: false,
+      proxyGitPath: './.remote/test',
+      steps: [{ stepName: 'checkHiddenCommits', error: true }],
+    });
+
+    await chain.executeChain(req);
+
+    expect(mockPushProcessors.writePack).toHaveBeenCalled();
+    expect(mockPushProcessors.checkHiddenCommits).toHaveBeenCalled();
+    expect(mockPushProcessors.checkIfWaitingAuth).not.toHaveBeenCalled();
+    expect(mockPushProcessors.preReceive).not.toHaveBeenCalled();
+    expect(mockPushProcessors.blockForAuth).not.toHaveBeenCalled();
+    expect(mockPostProcessors.audit).toHaveBeenCalled();
   });
 
   it('returns branchPushChain when action.type is push and actionType is BRANCH', async () => {

@@ -15,7 +15,7 @@
  */
 
 import path from 'path';
-import { Action, Step } from '../../actions';
+import { Action, PushType, Step } from '../../actions';
 import { spawnSync } from 'child_process';
 import { EMPTY_COMMIT_HASH } from '../../constants';
 import { Request } from 'express';
@@ -33,9 +33,23 @@ const exec = async (_req: Request, action: Action): Promise<Action> => {
       throw new Error('Both action.commitFrom and action.commitTo must be defined');
     }
 
+    const isTagPush = action.actionType === PushType.TAG;
+
+    if (isTagPush && !action.newIdxFiles?.length) {
+      const packMeta = action.steps.find((s) => s.stepName === 'parsePackFile')?.content?.meta;
+      const onlyTagObjects = packMeta?.entries === (action.tagData?.length ?? 0);
+      if (!onlyTagObjects) {
+        step.setError(
+          'Unable to verify the pushed pack. Push the commits on a branch first, then push the tag.',
+        );
+        action.error = true;
+        return action;
+      }
+    }
+
     // build introducedCommits set
     const introducedCommits = new Set<string>();
-    const revRange = oldOid === EMPTY_COMMIT_HASH ? newOid : `${oldOid}..${newOid}`;
+    const revRange = oldOid === EMPTY_COMMIT_HASH || isTagPush ? newOid : `${oldOid}..${newOid}`;
     const revList = spawnSync('git', ['rev-list', revRange], { cwd: repoPath, encoding: 'utf-8' })
       .stdout.trim()
       .split('\n')

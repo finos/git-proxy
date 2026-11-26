@@ -57,6 +57,7 @@ const validateUser = async (username: string, action: Action, step: Step): Promi
       `Your push has been blocked (${username} is not allowed to push on repo ${action.url})`,
     );
     action.addStep(step);
+    action.permissionDenied = true;
     return action;
   }
 
