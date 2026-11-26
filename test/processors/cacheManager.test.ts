@@ -360,7 +360,7 @@ describe('CacheManager', () => {
         maxSizeGB: 0.001,
         maxRepositories: 3,
         repoCacheDir: testCacheDir,
-        gitTimeoutSeconds: 600,
+        gitTimeoutSeconds: 3600,
       });
     });
   });

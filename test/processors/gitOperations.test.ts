@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { describe, it, expect, afterEach, vi } from 'vitest';
+import { describe, it, expect, afterEach, beforeEach, vi } from 'vitest';
 import { EventEmitter } from 'events';
 import fs from 'fs';
 import os from 'os';
@@ -30,6 +30,7 @@ vi.mock('child_process', async (importOriginal) => {
 });
 
 const spawnMock = vi.mocked(childProcess.spawn);
+const { spawn: realSpawn } = await vi.importActual<typeof import('child_process')>('child_process');
 
 /** A fake git process that exits with the given code (or emits a spawn error). */
 const fakeGit = (outcome: { code?: number; stderr?: string; error?: Error }) =>
@@ -205,17 +206,68 @@ describe('git-operations', () => {
       ]);
     });
 
-    it('kills a hung git and rejects once the timeout expires', async () => {
-      // Simulates a hung git
-      const proc = new EventEmitter() as any;
-      proc.stderr = new EventEmitter();
-      proc.kill = vi.fn();
-      spawnMock.mockImplementationOnce((() => proc) as any);
+    describe.skipIf(process.platform === 'win32')('when git hangs', () => {
+      const root = path.join(os.tmpdir(), `git-proxy-hang-${process.pid}`);
+      const pidFile = path.join(root, 'helper.pid');
 
-      await expect(
-        gitOps.fetch({ dir: '/tmp/m.git', url: 'https://github.com/a/b.git', timeoutMs: 20 }),
-      ).rejects.toThrow('git fetch timed out after 20ms');
-      expect(proc.kill).toHaveBeenCalledWith('SIGTERM');
+      const isAlive = (pid: number) => {
+        try {
+          process.kill(pid, 0);
+          return true;
+        } catch {
+          return false;
+        }
+      };
+      const until = async (check: () => boolean) => {
+        const start = Date.now();
+        while (!check() && Date.now() - start < 5000) {
+          await new Promise((resolve) => setImmediate(resolve));
+        }
+      };
+      const helperPid = () => Number(fs.readFileSync(pidFile, 'utf8'));
+      const hangingGit = (script: string) =>
+        spawnMock.mockImplementationOnce(((_cmd: string, _args: string[], options: any) =>
+          realSpawn(
+            'sh',
+            ['-c', `${script} sleep 30 & echo $! > ${pidFile}; wait`],
+            options,
+          )) as any);
+
+      beforeEach(() => fs.mkdirSync(root, { recursive: true }));
+      afterEach(() => {
+        vi.useRealTimers();
+        fs.rmSync(root, { recursive: true, force: true });
+      });
+
+      it('kills git together with its helpers before rejecting', async () => {
+        hangingGit('');
+
+        await expect(
+          gitOps.fetch({ dir: '/tmp/m.git', url: 'https://github.com/a/b.git', timeoutMs: 300 }),
+        ).rejects.toThrow('git fetch timed out after 300ms');
+
+        await until(() => !isAlive(helperPid()));
+        expect(isAlive(helperPid())).toBe(false);
+      });
+
+      it('escalates to SIGKILL when git ignores SIGTERM', async () => {
+        vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+        hangingGit("trap '' TERM;");
+
+        const fetching = expect(
+          gitOps.fetch({ dir: '/tmp/m.git', url: 'https://github.com/a/b.git', timeoutMs: 1000 }),
+        ).rejects.toThrow('timed out');
+        await until(() => fs.existsSync(pidFile) && fs.readFileSync(pidFile, 'utf8') !== '');
+
+        vi.advanceTimersByTime(1000); // SIGTERM, ignored
+        await new Promise((resolve) => setImmediate(resolve));
+        expect(isAlive(helperPid())).toBe(true);
+
+        vi.advanceTimersByTime(gitOps.KILL_GRACE_MS); // SIGKILL
+        await fetching;
+        await until(() => !isAlive(helperPid()));
+        expect(isAlive(helperPid())).toBe(false);
+      });
     });
 
     it('reports a generic error when git prints nothing', async () => {

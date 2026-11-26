@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { spawn } from 'child_process';
+import { ChildProcess, spawn } from 'child_process';
 
 /**
  * Git operations using native git commands
@@ -78,7 +78,27 @@ function httpOrigin(url: string): string | null {
   }
 }
 
-export const GIT_TIMEOUT_MS = 10 * 60 * 1000;
+export const GIT_TIMEOUT_MS = 60 * 60 * 1000;
+export const KILL_GRACE_MS = 5000;
+
+/** Git commands still running, killed if GitProxy exits first */
+const running = new Set<ChildProcess>();
+process.on('exit', () => running.forEach((proc) => killTree(proc, 'SIGKILL')));
+
+function killTree(proc: ChildProcess, signal: NodeJS.Signals): void {
+  try {
+    if (process.platform === 'win32') {
+      spawn('taskkill', ['/pid', String(proc.pid), '/T', '/F'], { stdio: 'ignore' }).on(
+        'error',
+        () => proc.kill(),
+      );
+    } else {
+      process.kill(-proc.pid!, signal);
+    }
+  } catch {
+    // Already gone
+  }
+}
 
 /**
  * Run a git command without blocking the event loop.
@@ -94,26 +114,44 @@ function runGit(
   timeoutMs: number = GIT_TIMEOUT_MS,
 ): Promise<{ status: number; stderr: string }> {
   return new Promise((resolve, reject) => {
-    const proc = spawn('git', args, { stdio: ['ignore', 'ignore', 'pipe'], env: buildEnv(env) });
+    const proc = spawn('git', args, {
+      stdio: ['ignore', 'ignore', 'pipe'],
+      env: buildEnv(env),
+      detached: process.platform !== 'win32',
+    });
+    running.add(proc);
     let stderr = '';
+    let timedOut = false;
+    let forceKill: NodeJS.Timeout | undefined;
 
     const timer = setTimeout(() => {
-      proc.kill('SIGTERM');
-      reject(
-        new Error(`git ${args.find((a) => !a.startsWith('-'))} timed out after ${timeoutMs}ms`),
-      );
+      timedOut = true;
+      killTree(proc, 'SIGTERM');
+      forceKill = setTimeout(() => killTree(proc, 'SIGKILL'), KILL_GRACE_MS);
     }, timeoutMs);
+
+    const done = () => {
+      clearTimeout(timer);
+      clearTimeout(forceKill);
+      running.delete(proc);
+    };
 
     proc.stderr.on('data', (chunk) => {
       stderr += chunk.toString();
     });
     proc.on('error', (error) => {
-      clearTimeout(timer);
+      done();
       reject(error);
     });
     proc.on('close', (code) => {
-      clearTimeout(timer);
-      resolve({ status: code ?? 1, stderr });
+      done();
+      if (timedOut) {
+        reject(
+          new Error(`git ${args.find((a) => !a.startsWith('-'))} timed out after ${timeoutMs}ms`),
+        );
+      } else {
+        resolve({ status: code ?? 1, stderr });
+      }
     });
   });
 }

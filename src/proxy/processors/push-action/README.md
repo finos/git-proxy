@@ -20,7 +20,7 @@ In `proxy.config.json`:
     "maxSizeGB": 2,
     "maxRepositories": 50,
     "cacheDir": "./.repo-cache",
-    "gitTimeoutSeconds": 600
+    "gitTimeoutSeconds": 3600
   }
 }
 ```
@@ -31,7 +31,7 @@ In `proxy.config.json`:
 | `maxSizeGB`         | `2`             | Total size above which LRU eviction kicks in    |
 | `maxRepositories`   | `50`            | Number of mirrors above which eviction kicks in |
 | `cacheDir`          | `./.repo-cache` | Where the bare mirrors live                     |
-| `gitTimeoutSeconds` | `600`           | Kill a git command and fail the push after this |
+| `gitTimeoutSeconds` | `3600`          | Kill a git command and fail the push after this |
 
 ## How a cached pull works
 
@@ -66,7 +66,7 @@ The global `CacheManager` mutex additionally serialises `touchRepository()` and 
 
 > The locks are in-process. Several GitProxy instances must not share the same `cacheDir`.
 
-All git commands are run with an asynchronous `spawn`, so a long clone never blocks the event loop. Each command is killed after `cache.gitTimeoutSeconds`, so a hung fetch fails its push and releases the lock instead of blocking every later push to that repository.
+All git commands are run with an asynchronous `spawn`, so a long clone never blocks the event loop. Each command is killed after `cache.gitTimeoutSeconds`, together with its helper processes (`SIGTERM`, then `SIGKILL` after 5 s), so a hung fetch fails its push and releases the lock instead of blocking every later push to that repository. The push only fails once every git process has exited.
 
 ## Credentials
 

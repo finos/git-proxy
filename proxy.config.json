@@ -226,7 +226,7 @@
     "maxSizeGB": 2,
     "maxRepositories": 50,
     "cacheDir": "./.repo-cache",
-    "gitTimeoutSeconds": 600
+    "gitTimeoutSeconds": 3600
   },
   "ssh": {
     "enabled": false,

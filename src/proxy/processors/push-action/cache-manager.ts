@@ -299,7 +299,7 @@ export class CacheManager {
       repoCacheDir: this.overrides.repoCacheDir ?? config?.cacheDir ?? './.repo-cache',
       maxSizeGB: this.overrides.maxSizeGB ?? config?.maxSizeGB ?? 2,
       maxRepositories: this.overrides.maxRepositories ?? config?.maxRepositories ?? 50,
-      gitTimeoutSeconds: this.overrides.gitTimeoutSeconds ?? config?.gitTimeoutSeconds ?? 600,
+      gitTimeoutSeconds: this.overrides.gitTimeoutSeconds ?? config?.gitTimeoutSeconds ?? 3600,
     };
   }
 }
