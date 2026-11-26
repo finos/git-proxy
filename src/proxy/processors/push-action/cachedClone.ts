@@ -139,9 +139,12 @@ export async function performCachedClone(
  */
 export function cacheKeyFor(action: Action): string {
   const parts = [hostOf(action.url), action.project, action.repoName].filter(Boolean);
-  const readable = parts.map((value) => value.replace(/[^\w.-]+/g, '-')).join('__');
+  const readable = parts
+    .map((value) => value.replace(/[^\w.-]+/g, '-'))
+    .join('__')
+    .slice(0, 64);
   const hash = crypto.createHash('sha256').update(JSON.stringify(parts)).digest('hex');
-  return `${readable}-${hash.slice(0, 8)}`;
+  return `${readable}-${hash}`;
 }
 
 /**

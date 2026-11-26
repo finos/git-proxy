@@ -39,7 +39,7 @@ In `proxy.config.json`:
 
 ### Phase 1 - bare mirror
 
-The mirror lives at `<cacheDir>/<host>__<project>__<repo>-<hash>`, e.g. `github.com__finos__git-proxy.git-1a2b3c4d`, so the same repository name on different hosts or projects never shares a mirror. The hash is taken from the unsanitised host, project and repository, so paths that sanitise to the same name (GitLab `a/b/c` and `a-b/c`) stay apart.
+The mirror lives at `<cacheDir>/<host>__<project>__<repo>-<hash>`, e.g. `github.com__finos__git-proxy.git-<sha256>`, so the same repository name on different hosts or projects never shares a mirror. The hash is taken from the unsanitised host, project and repository, so paths that sanitise to the same name (GitLab `a/b/c` and `a-b/c`) stay apart. The readable part is cut to 64 characters to keep paths short; the full SHA-256 keeps keys unique.
 
 - **Miss**: the remote is cloned with `git clone --bare` (full history, all branches and tags).
 - **Hit**: the mirror is updated with `git fetch --prune` of `refs/heads/*` and `refs/tags/*`.

@@ -79,20 +79,20 @@ describe('cacheKeyFor', () => {
   it('includes the host and project in the key', () => {
     const action = actionFor('https://github.com/finos/git-proxy.git');
 
-    expect(cacheKeyFor(action)).toMatch(/^github\.com__finos__git-proxy\.git-[0-9a-f]{8}$/);
+    expect(cacheKeyFor(action)).toMatch(/^github\.com__finos__git-proxy\.git-[0-9a-f]{64}$/);
   });
 
   it('keeps the port of self-hosted remotes, sanitised', () => {
     const action = actionFor('https://git.internal:8443/team/app.git');
 
-    expect(cacheKeyFor(action)).toMatch(/^git\.internal-8443__team__app\.git-[0-9a-f]{8}$/);
+    expect(cacheKeyFor(action)).toMatch(/^git\.internal-8443__team__app\.git-[0-9a-f]{64}$/);
   });
 
   it('falls back to host and repository name when there is no project', () => {
     const action = actionFor('https://github.com/finos/git-proxy.git');
     action.project = '';
 
-    expect(cacheKeyFor(action)).toMatch(/^github\.com__git-proxy\.git-[0-9a-f]{8}$/);
+    expect(cacheKeyFor(action)).toMatch(/^github\.com__git-proxy\.git-[0-9a-f]{64}$/);
   });
 
   it('keeps paths apart that sanitise to the same name', () => {
@@ -104,6 +104,15 @@ describe('cacheKeyFor', () => {
     for (const [one, two] of pairs) {
       expect(cacheKeyFor(actionFor(one))).not.toBe(cacheKeyFor(actionFor(two)));
     }
+  });
+
+  it('cuts long names short but still keeps them apart', () => {
+    const group = 'a'.repeat(100);
+    const one = cacheKeyFor(actionFor(`https://gitlab.com/${group}/one.git`));
+    const two = cacheKeyFor(actionFor(`https://gitlab.com/${group}/two.git`));
+
+    expect(one).toHaveLength(64 + 1 + 64);
+    expect(one).not.toBe(two);
   });
 
   it('is stable for the same repository', () => {
