@@ -42,7 +42,8 @@ function buildEnv(extraEnv?: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
  * `ps`, and a URL with credentials would also be written to the repo config.
  * The header is scoped to the remote's origin, and credential helpers are
  * disabled so that a rejected token can never fall back to credentials stored
- * on the proxy host.
+ * on the proxy host. The header is sent even when a field is empty (e.g. a token
+ * as username with no password): without it curl would fall back to ~/.netrc.
  *
  * @param url The remote URL
  * @param username Client username
@@ -53,8 +54,8 @@ export function buildAuthEnv(url: string, username?: string, password?: string):
   const entries: Array<[string, string]> = [['credential.helper', '']];
 
   const origin = httpOrigin(url);
-  if (origin && username && password) {
-    const token = Buffer.from(`${username}:${password}`).toString('base64');
+  if (origin && (username !== undefined || password !== undefined)) {
+    const token = Buffer.from(`${username ?? ''}:${password ?? ''}`).toString('base64');
     entries.push([`http.${origin}/.extraHeader`, `Authorization: Basic ${token}`]);
   }
 
