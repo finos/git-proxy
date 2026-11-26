@@ -15,17 +15,42 @@
  */
 
 import { ChildProcess, spawn } from 'child_process';
+import fs from 'fs';
+import os from 'os';
+import path from 'path';
 
 /**
  * Git operations using native git commands
  */
 
+let isolatedHome: string | undefined;
+
+/**
+ * An empty folder used as HOME, so neither git nor curl read the proxy host's
+ * ~/.gitconfig, ~/.config/git/config or ~/.netrc
+ */
+function emptyHome(): string {
+  isolatedHome ??= fs.mkdtempSync(path.join(os.tmpdir(), 'git-proxy-home-'));
+  return isolatedHome;
+}
+
 /**
  * Build spawn environment, mapping NODE_TLS_REJECT_UNAUTHORIZED=0 to GIT_SSL_NO_VERIFY=1
  * so native git commands respect the same TLS settings as the Node.js process.
+ *
+ * Git is isolated from the proxy host's git configuration, as isomorphic-git is on
+ * the uncached path: an extraHeader or insteadOf set there must never apply to a
+ * client's clone. Proxy and CA settings still work through HTTPS_PROXY and GIT_SSL_CAINFO.
  */
 function buildEnv(extraEnv?: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
-  const env: NodeJS.ProcessEnv = { ...process.env, GIT_TERMINAL_PROMPT: '0' };
+  const env: NodeJS.ProcessEnv = {
+    ...process.env,
+    GIT_TERMINAL_PROMPT: '0',
+    GIT_CONFIG_NOSYSTEM: '1',
+    HOME: emptyHome(),
+    USERPROFILE: emptyHome(),
+  };
+  delete env.XDG_CONFIG_HOME;
   if (process.env.NODE_TLS_REJECT_UNAUTHORIZED === '0') {
     env.GIT_SSL_NO_VERIFY = '1';
   }
@@ -84,7 +109,12 @@ export const KILL_GRACE_MS = 5000;
 
 /** Git commands still running, killed if GitProxy exits first */
 const running = new Set<ChildProcess>();
-process.on('exit', () => running.forEach((proc) => killTree(proc, 'SIGKILL')));
+process.on('exit', () => {
+  running.forEach((proc) => killTree(proc, 'SIGKILL'));
+  if (isolatedHome) {
+    fs.rmSync(isolatedHome, { recursive: true, force: true });
+  }
+});
 
 function killTree(proc: ChildProcess, signal: NodeJS.Signals): void {
   try {

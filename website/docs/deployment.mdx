@@ -318,6 +318,7 @@ The cache is disabled by default. Enabling it is recommended for production:
 Things to know:
 
 - Each push still authenticates against the upstream with the pushing user's own credentials, so the cache never gives anyone access to a repository they could not clone themselves.
+- Git runs isolated from the GitProxy host's git configuration (`/etc/gitconfig`, `~/.gitconfig`, `~/.netrc`). If your network needs an HTTP proxy or a custom CA, set them with the `HTTPS_PROXY` and `GIT_SSL_CAINFO` environment variables.
 - Requires Git 2.31 or later on the GitProxy host. GitProxy refuses to start with an older Git while the cache is enabled.
 - The first push of a repository is slower than without the cache: the mirror downloads the full history, while the uncached path makes a shallow clone. Every later push only fetches the new commits.
 - Each mirror takes about as much disk as the repository's full history. Size `maxSizeGB` and the disk behind `cacheDir` for the repositories you proxy. A single repository larger than `maxSizeGB` is still cached, and a warning is logged.

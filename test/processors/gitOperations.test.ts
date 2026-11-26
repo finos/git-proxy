@@ -96,47 +96,71 @@ describe('git-operations', () => {
       ]);
     });
 
-    // Relies on ~/.netrc, which is _netrc on Windows
-    it.skipIf(process.platform === 'win32')(
-      "never lets git fall back to the proxy host's ~/.netrc",
-      async () => {
-        const root = fs.mkdtempSync(path.join(os.tmpdir(), 'git-proxy-netrc-'));
+    // The proxy host's own files: HOME and the system config are faked for the test
+    describe.skipIf(process.platform === 'win32')("the proxy host's configuration", () => {
+      const root = path.join(os.tmpdir(), `git-proxy-host-${process.pid}`);
+      const service = `Basic ${Buffer.from('service:token').toString('base64')}`;
+      const received: string[][] = [];
+      let server: http.Server;
+      let url: string;
+
+      // Records every Authorization header of every request and always asks for credentials
+      beforeEach(async () => {
+        fs.mkdirSync(root, { recursive: true });
+        received.length = 0;
+        server = http.createServer((req, res) => {
+          received.push(
+            req.rawHeaders.filter((_v, i, all) => all[i - 1]?.toLowerCase() === 'authorization'),
+          );
+          res.writeHead(401, { 'WWW-Authenticate': 'Basic realm="git"' }).end();
+        });
+        await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+        url = `http://127.0.0.1:${(server.address() as AddressInfo).port}/repo.git`;
+        vi.stubEnv('HOME', root);
+      });
+
+      afterEach(() => {
+        server.close();
+        fs.rmSync(root, { recursive: true, force: true });
+      });
+
+      const cloneAs = (username: string, password: string) =>
+        expect(
+          gitOps.clone({ dir: path.join(root, 'out.git'), url, username, password, bare: true }),
+        ).rejects.toThrow(/Git clone failed/);
+
+      const onlyClientHeaders = (raw: string) => {
+        const client = `Basic ${Buffer.from(raw).toString('base64')}`;
+        expect(received.length).toBeGreaterThan(0);
+        expect(received.every((headers) => headers.length === 1 && headers[0] === client)).toBe(
+          true,
+        );
+      };
+
+      it('never falls back to ~/.netrc', async () => {
         fs.writeFileSync(
           path.join(root, '.netrc'),
           'machine 127.0.0.1\nlogin hostuser\npassword hostsecret\n',
           { mode: 0o600 },
         );
 
-        // Records the Authorization header of every request and always asks for credentials
-        const received: Array<string | undefined> = [];
-        const server = http.createServer((req, res) => {
-          received.push(req.headers.authorization);
-          res.writeHead(401, { 'WWW-Authenticate': 'Basic realm="git"' }).end();
-        });
-        await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
-        const { port } = server.address() as AddressInfo;
+        await cloneAs('client', 'wrong');
 
-        try {
-          await expect(
-            gitOps.clone({
-              dir: path.join(root, 'out.git'),
-              url: `http://127.0.0.1:${port}/repo.git`,
-              username: 'client',
-              password: '',
-              bare: true,
-              env: { HOME: root, GIT_CONFIG_NOSYSTEM: '1' },
-            }),
-          ).rejects.toThrow(/Git clone failed/);
+        onlyClientHeaders('client:wrong');
+      });
 
-          const client = `Basic ${Buffer.from('client:').toString('base64')}`;
-          expect(received.length).toBeGreaterThan(0);
-          expect(received.every((header) => header === client)).toBe(true);
-        } finally {
-          server.close();
-          fs.rmSync(root, { recursive: true, force: true });
-        }
-      },
-    );
+      it.each([
+        ['~/.gitconfig', () => path.join(root, '.gitconfig')],
+        ['the system gitconfig', () => path.join(root, 'system-gitconfig')],
+      ])('ignores an extraHeader set in %s', async (_where, file) => {
+        fs.writeFileSync(file(), `[http]\n\textraHeader = Authorization: ${service}\n`);
+        vi.stubEnv('GIT_CONFIG_SYSTEM', path.join(root, 'system-gitconfig'));
+
+        await cloneAs('client', 'wrong');
+
+        onlyClientHeaders('client:wrong');
+      });
+    });
 
     it('only disables credential helpers when there are no credentials', () => {
       expect(configEntries(gitOps.buildAuthEnv('https://github.com/a/b.git'))).toEqual([
