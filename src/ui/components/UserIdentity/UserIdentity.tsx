@@ -16,6 +16,8 @@
 
 import React from 'react';
 import { Link } from 'react-router';
+import { useDisplayNameQuery } from '../../query/useDisplayNameQuery';
+import { useUsernameByEmailQuery } from '../../query/useUsernameByEmailQuery';
 
 export interface UserIdentityProps {
   /** GitProxy username — when set, renders name/display as a profile link. */
@@ -46,8 +48,18 @@ const UserIdentity = ({
   emailClassName,
   emptyClassName,
 }: UserIdentityProps): React.ReactElement => {
-  const displayName = name?.trim() || username?.trim() || '';
+  const trimmedUsername = username?.trim() || '';
+  const trimmedName = name?.trim() || '';
   const displayEmail = email?.trim() || '';
+  const { data: resolvedUsername = null } = useUsernameByEmailQuery(
+    !trimmedUsername && displayEmail ? displayEmail.toLowerCase() : undefined,
+  );
+  const { data: resolvedDisplayName = null } = useDisplayNameQuery(
+    trimmedUsername && !trimmedName ? trimmedUsername : undefined,
+  );
+  const profileUsername = trimmedUsername || resolvedUsername;
+  const displayName =
+    trimmedName || (trimmedUsername ? resolvedDisplayName || trimmedUsername : '');
 
   if (!displayName && !displayEmail) {
     return <span className={emptyClassName}>—</span>;
@@ -56,12 +68,12 @@ const UserIdentity = ({
   return (
     <span className={className}>
       {displayName ? (
-        username ? (
+        profileUsername ? (
           <Link
-            to={`/dashboard/user/${encodeURIComponent(username)}`}
+            to={`/dashboard/user/${encodeURIComponent(profileUsername)}`}
             className={nameClassName}
             title={title}
-            onClick={(e: React.MouseEvent) => e.stopPropagation()}
+            onClick={(event: React.MouseEvent) => event.stopPropagation()}
           >
             {displayName}
           </Link>

@@ -96,8 +96,12 @@ Executed when a user makes a `git push` to GitProxy. These are the actions in `p
 Executed when a user makes a `git clone` or `git pull` to GitProxy:
 
 - [`checkRepoInAuthorisedList`](processors.md#checkrepoinauthorisedlist)
+- `AFTER_AUTHORISATION` plugins
+- `AFTER_CHECKOUT` plugins
 
-At present, the pull action chain is only checking that the repository is configured in GitProxy. This ensures it will block pull requests for unknown repositories.
+By default, the pull action chain only checks that the repository is configured in GitProxy, to ensure pull requests for unknown repositories are blocked. This behaviour can be extended via plugins.
+
+Note that GitProxy doesn't parse or fetch the content of the pulls by default (as this slows down all git pull operations). Check out the [pull scanner plugin](../development/plugins.mdx#scanning-pulls) to learn how to enable this.
 
 #### Default action chain
 
@@ -111,7 +115,7 @@ The default action chain, much like the pull chain, is only checking that the re
 
 After processors in the chain are done executing, [`audit`](processors.md#audit) is called to store the action along with all of its execution steps in the database for auditing purposes.
 
-If [`pullRemote`](processors.md#pullremote) ran successfully and cloned the repository, then [`clearBareClone`](processors.md#clearbareclone) is run to clear up that clone, freeing disk space and ensuring that the _.remote/\*_ folder created does not conflict with any future pushes with the same push ID.
+If [`pullRemote`](processors.md#pullremote) (or a plugin, such as the `extractPullData` sample) created a clone at `action.proxyGitPath`, then [`clearBareClone`](processors.md#clearbareclone) is run to clear up that clone, freeing disk space and ensuring that the _.remote/\*_ folder created does not conflict with any future pushes with the same push ID.
 
 Finally, if the action was auto-approved or auto-rejected as a result of running [`preReceive`](processors.md#prereceive), it will attempt to auto-approve or auto-reject it.
 
@@ -466,6 +470,48 @@ Cypress.Commands.add('getCSRFToken', () => {
 Defines a list of plugins to integrate on GitProxy's push or pull actions. Accepted values are either a file path or a module name.
 
 See the [plugin guide](../development/plugins) for more setup details.
+
+#### `eventHandlers`
+
+Defines a list of event handler modules that observe GitProxy lifecycle events. Like [`plugins`](#plugins), each value is either a file path or a module name, and modules are resolved the same way.
+
+Unlike chain plugins, event handlers are **observers only** — they cannot block, modify or reject a Git operation. They run asynchronously, fire-and-forget, off the request path: a handler that is slow or throws will never delay or fail a push/pull. Use them to react to GitProxy activity, e.g. emitting metrics, sending notifications or writing to an external audit log.
+
+See the [event handler guide](../development/event-handlers) for the execution model, the full handler API and guidance on choosing an event handler over a plugin.
+
+Sample values:
+
+```json
+"eventHandlers": [
+  "./my-event-handler.js",
+  "@my-org/gitproxy-notifier"
+]
+```
+
+A handler module exports one or more `EventHandlerPlugin` instances. Each one receives a registry through which it subscribes to events for `push` and/or `pull` operations. The following lifecycle phases are emitted:
+
+- **`started`**: the chain is about to run. User identity may not be resolved yet.
+- **`completed`**: the chain finished at a resolved outcome — the operation was approved (`allowPush`) or auto-approved/auto-rejected by the system.
+- **`pendingReview`**: the chain finished and the push was blocked awaiting manual approval. It now sits in the approval queue until a reviewer acts on it. This is not a denial or an error.
+- **`error`**: an unhandled exception or step error aborted the chain.
+- **`permissionDenied`**: the user lacks push permission for the repository.
+
+Example handler subscribing to push events:
+
+```js
+const { EventHandlerPlugin } = require('@finos/git-proxy/eventHandlers');
+
+module.exports.notifier = new EventHandlerPlugin((registry) => {
+  registry
+    .onPush()
+    .onPendingReview((details) => {
+      console.log(`Push ${details.actionId} on ${details.repository.url} awaits review`);
+    })
+    .onError((details) => {
+      console.error(`Push ${details.actionId} failed: ${details.error?.message}`);
+    });
+});
+```
 
 #### `authorisedList`
 

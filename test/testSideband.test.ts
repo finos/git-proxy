@@ -266,6 +266,34 @@ describe('SidebandProgressWriter', () => {
     writer.message('second');
     expect(mocks.write).toHaveBeenCalledOnce();
   });
+
+  it.each([
+    ['ended', { writableEnded: true }],
+    ['destroyed', { destroyed: true }],
+  ])('should deactivate itself without writing once the response is %s', (_label, state) => {
+    const { res, mocks } = createMockRes();
+    const writer = new SidebandProgressWriter(res);
+
+    writer.message('first');
+    Object.assign(mocks, state);
+    writer.message('client is gone');
+    writer.message('still gone');
+
+    expect(writer.active).toBe(false);
+    expect(mocks.write).toHaveBeenCalledOnce();
+  });
+
+  it('should not start the stream when the client disconnected before the first message', () => {
+    const { res, mocks } = createMockRes();
+    Object.assign(mocks, { destroyed: true });
+    const writer = new SidebandProgressWriter(res);
+
+    writer.message('too late');
+
+    expect(writer.active).toBe(false);
+    expect(mocks.flushHeaders).not.toHaveBeenCalled();
+    expect(mocks.write).not.toHaveBeenCalled();
+  });
 });
 
 describe('createProgressWriter', () => {

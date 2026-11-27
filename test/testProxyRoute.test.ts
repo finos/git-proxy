@@ -347,8 +347,9 @@ describe('handleRefsErrorMessage', () => {
     const lengthHex = result.substring(0, 4);
     const length = parseInt(lengthHex, 16);
 
-    const errorBody = `ERR ${message}`;
+    const errorBody = `ERR ${message}\n`;
     expect(length).toBe(4 + Buffer.byteLength(errorBody));
+    expect(result.substring(length)).toBe('0000');
   });
 });
 
@@ -555,6 +556,29 @@ describe('proxyFilter', () => {
       expect(result).toBe(false);
       expect(setMock).toHaveBeenCalledWith('content-type', 'application/x-git-receive-pack-result');
     });
+
+    it('should reject a fetch with an ERR packet', async () => {
+      mockReq.method = 'POST';
+      mockReq.url = '/github.com/finos/git-proxy.git/git-upload-pack';
+
+      vi.spyOn(helper, 'processUrlPath').mockReturnValue({
+        gitPath: '/finos/git-proxy.git/git-upload-pack',
+        repoPath: 'github.com',
+      });
+      vi.spyOn(helper, 'validGitRequest').mockReturnValue(true);
+
+      vi.spyOn(chain, 'executeChain').mockResolvedValue({
+        error: true,
+        blocked: false,
+        errorMessage: 'Fetch blocked',
+      } as Action);
+
+      const result = await proxyFilter?.(mockReq as Request, mockRes as Response);
+
+      expect(result).toBe(false);
+      expect(setMock).toHaveBeenCalledWith('content-type', 'application/x-git-upload-pack-result');
+      expect(sendMock.mock.calls[0][0]).toMatch(/^[0-9a-f]{4}ERR Fetch blocked\n0000$/);
+    });
   });
 
   describe('Error handling', () => {
@@ -647,6 +671,72 @@ describe('proxyFilter', () => {
       // should use handleMessage format
       // eslint-disable-next-line no-control-regex
       expect(sentMessage).toMatch(/^[0-9a-f]{4}\x02/);
+    });
+  });
+
+  describe('Client disconnects', () => {
+    beforeEach(() => {
+      mockReq.method = 'POST';
+      mockReq.url = '/github.com/finos/git-proxy.git/git-receive-pack';
+      (mockReq as { socket: unknown }).socket = { destroyed: true };
+      vi.spyOn(helper, 'processUrlPath').mockReturnValue({
+        gitPath: '/finos/git-proxy.git/git-receive-pack',
+        repoPath: 'github.com',
+      });
+      vi.spyOn(helper, 'validGitRequest').mockReturnValue(true);
+    });
+
+    it('should not forward an allowed push once the client has disconnected', async () => {
+      vi.spyOn(chain, 'executeChain').mockResolvedValue({
+        error: false,
+        blocked: false,
+      } as Action);
+      const logSpy = vi.mocked(console.log);
+
+      const result = await proxyFilter?.(mockReq as Request, mockRes as Response);
+
+      expect(result).toBe(false);
+      expect(sendMock).not.toHaveBeenCalled();
+      expect(logSpy.mock.calls.flat().join('\n')).toContain(
+        'Client disconnected before the push could be forwarded',
+      );
+    });
+
+    it('should not try to send a rejection to a disconnected client', async () => {
+      vi.spyOn(chain, 'executeChain').mockResolvedValue({
+        error: true,
+        blocked: false,
+        errorMessage: 'Client disconnected before the DLP scan completed',
+      } as Action);
+
+      const result = await proxyFilter?.(mockReq as Request, mockRes as Response);
+
+      expect(result).toBe(false);
+      expect(statusMock).not.toHaveBeenCalled();
+      expect(setMock).not.toHaveBeenCalled();
+      expect(sendMock).not.toHaveBeenCalled();
+    });
+
+    it('should not try to send an error to a disconnected client when the chain throws', async () => {
+      vi.spyOn(chain, 'executeChain').mockRejectedValue(new Error('Unexpected error'));
+      vi.spyOn(console, 'error').mockImplementation(() => {});
+
+      const result = await proxyFilter?.(mockReq as Request, mockRes as Response);
+
+      expect(result).toBe(false);
+      expect(sendMock).not.toHaveBeenCalled();
+    });
+
+    it('should still forward when the client socket is open', async () => {
+      (mockReq as { socket: unknown }).socket = { destroyed: false };
+      vi.spyOn(chain, 'executeChain').mockResolvedValue({
+        error: false,
+        blocked: false,
+      } as Action);
+
+      const result = await proxyFilter?.(mockReq as Request, mockRes as Response);
+
+      expect(result).toBe(true);
     });
   });
 
@@ -778,6 +868,23 @@ describe('endStreamedResponseWithMessage', () => {
     } as unknown as Response;
 
     endStreamedResponseWithMessage(res, 'too late');
+
+    expect(res.write).not.toHaveBeenCalled();
+    expect(res.end).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ['the response was destroyed', { destroyed: true }],
+    ['the client socket was destroyed', { socket: { destroyed: true } }],
+  ])('should do nothing when %s', (_label, state) => {
+    const res = {
+      writableEnded: false,
+      ...state,
+      write: vi.fn(),
+      end: vi.fn(),
+    } as unknown as Response;
+
+    endStreamedResponseWithMessage(res, 'client is gone');
 
     expect(res.write).not.toHaveBeenCalled();
     expect(res.end).not.toHaveBeenCalled();
@@ -976,6 +1083,67 @@ describe('createReceivePackHandler', () => {
     expect(body).toContain('unpack ok\n');
     expect(body).toContain('ng refs/heads/feature rejected by GitProxy\n');
     expect(mockRes.end).toHaveBeenCalledOnce();
+  });
+
+  describe('when the client disconnected during the chain', () => {
+    beforeEach(() => {
+      vi.spyOn(helper, 'processUrlPath').mockReturnValue({
+        gitPath: '/finos/git-proxy.git/git-receive-pack',
+        repoPath: 'github.com',
+      });
+      vi.spyOn(helper, 'validGitRequest').mockReturnValue(true);
+      (mockReq as { socket: unknown }).socket = { destroyed: true };
+    });
+
+    it('should not forward an allowed push upstream', async () => {
+      vi.spyOn(chain, 'executeChain').mockResolvedValue({
+        error: false,
+        blocked: false,
+      } as Action);
+      const upstreamRequest = vi.spyOn(https, 'request').mockImplementation(() => {
+        throw new Error('push must not be forwarded');
+      });
+
+      await handler(mockReq as Request, mockRes as Response, nextMock);
+
+      expect(upstreamRequest).not.toHaveBeenCalled();
+      expect(mockRes.send).not.toHaveBeenCalled();
+      expect(mockRes.write).not.toHaveBeenCalled();
+      expect(mockRes.end).not.toHaveBeenCalled();
+      expect(vi.mocked(console.log).mock.calls.flat().join('\n')).toContain(
+        'Client disconnected before the push could be forwarded',
+      );
+    });
+
+    it('should not send a buffered rejection', async () => {
+      vi.spyOn(chain, 'executeChain').mockResolvedValue({
+        error: true,
+        blocked: false,
+        errorMessage: 'Client disconnected before the DLP scan completed',
+      } as Action);
+
+      await handler(mockReq as Request, mockRes as Response, nextMock);
+
+      expect(mockRes.send).not.toHaveBeenCalled();
+      expect(mockRes.set).not.toHaveBeenCalled();
+    });
+
+    it('should not finish a sideband stream that the client already closed', async () => {
+      vi.spyOn(chain, 'executeChain').mockImplementation(async () => {
+        mockRes.headersSent = true;
+        (mockRes as { destroyed: boolean }).destroyed = true;
+        return {
+          error: true,
+          blocked: false,
+          errorMessage: 'Client disconnected before the DLP scan completed',
+        } as Action;
+      });
+
+      await handler(mockReq as Request, mockRes as Response, nextMock);
+
+      expect(mockRes.write).not.toHaveBeenCalled();
+      expect(mockRes.end).not.toHaveBeenCalled();
+    });
   });
 
   it('should not append a report-status when the client did not request one', async () => {
@@ -1321,8 +1489,9 @@ describe('proxy route helpers', () => {
       const lengthHex = result.substring(0, 4);
       const length = parseInt(lengthHex, 16);
 
-      const errorBody = `ERR ${message}`;
+      const errorBody = `ERR ${message}\n`;
       expect(length).toBe(4 + Buffer.byteLength(errorBody));
+      expect(result.substring(length)).toBe('0000');
     });
   });
 });

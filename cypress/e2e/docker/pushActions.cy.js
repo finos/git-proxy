@@ -69,7 +69,8 @@ describe('Push Actions (Approve, Reject, Cancel)', () => {
 
     it('should approve a pending push via attestation dialog', function () {
       cy.login(approverUser.username, approverUser.password);
-      cy.visit(`/dashboard/push/${this.pushId}`);
+      cy.visit('/dashboard/push');
+      cy.get(`tr[aria-label="Open activity ${this.pushId}"]`).click();
 
       cy.get('[data-testid="push-status"]').should('contain', 'Pending');
 
@@ -93,9 +94,12 @@ describe('Push Actions (Approve, Reject, Cancel)', () => {
 
       cy.url().should('include', '/dashboard/push');
       cy.url().should('not.include', this.pushId);
+      cy.get(`tr[aria-label="Open activity ${this.pushId}"]`).should('not.exist');
+      cy.contains('a', 'Approved').click();
+      cy.get(`tr[aria-label="Open activity ${this.pushId}"]`).click();
 
-      cy.visit(`/dashboard/push/${this.pushId}`);
       cy.get('[data-testid="push-status"]').should('contain', 'Approved');
+      cy.contains('Invalid DateTime').should('not.exist');
 
       cy.get('[data-testid="push-cancel-btn"]').should('not.exist');
       cy.get('[data-testid="push-reject-btn"]').should('not.exist');
@@ -111,7 +115,8 @@ describe('Push Actions (Approve, Reject, Cancel)', () => {
 
     it('should reject a pending push', function () {
       cy.login(approverUser.username, approverUser.password);
-      cy.visit(`/dashboard/push/${this.pushId}`);
+      cy.visit('/dashboard/push');
+      cy.get(`tr[aria-label="Open activity ${this.pushId}"]`).click();
 
       cy.get('[data-testid="push-status"]').should('contain', 'Pending');
 
@@ -126,8 +131,11 @@ describe('Push Actions (Approve, Reject, Cancel)', () => {
       cy.url().should('include', '/dashboard/push');
       cy.url().should('not.include', this.pushId);
 
-      cy.visit(`/dashboard/push/${this.pushId}`);
+      cy.get(`tr[aria-label="Open activity ${this.pushId}"]`).should('not.exist');
+      cy.contains('a', 'Rejected').click();
+      cy.get(`tr[aria-label="Open activity ${this.pushId}"]`).click();
       cy.get('[data-testid="push-status"]').should('contain', 'Rejected');
+      cy.contains('Invalid DateTime').should('not.exist');
 
       cy.get('[data-testid="push-cancel-btn"]').should('not.exist');
       cy.get('[data-testid="push-reject-btn"]').should('not.exist');
@@ -143,14 +151,17 @@ describe('Push Actions (Approve, Reject, Cancel)', () => {
 
     it('should cancel a pending push', function () {
       cy.login(testUser.username, testUser.password);
-      cy.visit(`/dashboard/push/${this.pushId}`);
+      cy.visit('/dashboard/push');
+      cy.get(`tr[aria-label="Open activity ${this.pushId}"]`).click();
 
       cy.get('[data-testid="push-status"]').should('contain', 'Pending');
       cy.get('[data-testid="push-cancel-btn"]').click();
 
       cy.url().should('include', '/dashboard/push');
 
-      cy.visit(`/dashboard/push/${this.pushId}`);
+      cy.get(`tr[aria-label="Open activity ${this.pushId}"]`).should('not.exist');
+      cy.contains('a', 'Canceled').click();
+      cy.get(`tr[aria-label="Open activity ${this.pushId}"]`).click();
       cy.get('[data-testid="push-status"]').should('contain', 'Canceled');
 
       cy.get('[data-testid="push-cancel-btn"]').should('not.exist');

@@ -21,9 +21,6 @@ import parseDiff, { File } from 'parse-diff';
 import { Action, Step } from '../../actions';
 import { getCommitConfig, getPrivateOrganizations } from '../../../config';
 
-const commitConfig = getCommitConfig();
-const privateOrganizations = getPrivateOrganizations();
-
 const BLOCK_TYPE = {
   LITERAL: 'Offending Literal',
   PATTERN: 'Offending Pattern',
@@ -85,6 +82,9 @@ const getDiffViolations = (
 };
 
 const combineMatches = (organization: string) => {
+  const commitConfig = getCommitConfig();
+  const privateOrganizations = getPrivateOrganizations();
+
   // Configured blocked literals
   const blockedLiterals: string[] = commitConfig?.diff?.block?.literals ?? [];
 
