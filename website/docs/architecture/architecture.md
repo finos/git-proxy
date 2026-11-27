@@ -723,7 +723,7 @@ If the JWT cannot be verified, is expired, or doesn't match the expected issuer 
 
 ##### Role Mapping
 
-After a token is successfully validated, role assignment is done based on `roleMapping`. The decoded JWT payload is matched against these rules. Roles will be assigned when a key-value pair in the claims matches the ones in the configuration. These roles are then assigned to the `Request.user` value.
+After a token is successfully validated, role assignment is done based on `roleMapping`. The decoded JWT payload is matched against these rules. Roles will be assigned when **every** claim listed for it matches. For claims with array values (such as `groups`), the claim matches when the array contains the expected value. A role with an empty mapping is never assigned. Matched roles are then assigned to the `Request.user` value, and claims in the token that share a role's name (e.g. a raw `admin` claim) are ignored.
 
 For example, to assign `req.admin` to users whose name matches "John Doe":
 

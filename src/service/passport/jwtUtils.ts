@@ -101,11 +101,17 @@ export async function validateJwt(
  *
  * If no role mapping is provided, the user will not have any roles assigned (i.e. user.admin = false).
  *
- * For example, the following role mapping will assign the "admin" role to users whose "name" claim is "John Doe":
+ * A role is only assigned when each claim in its mapping matches. A claim matches when its value
+ * equals the expected value. For claims with array values (e.g. "groups"), when it contains it.
+ * Roles with an empty claim mapping are never assigned.
+ *
+ * For example, the following role mapping will assign the "admin" role to users whose "name" claim is "John Doe"
+ * and whose "groups" claim contains "admins":
  *
  * {
  *   "admin": {
- *     "name": "John Doe"
+ *     "name": "John Doe",
+ *     "groups": "admins"
  *   }
  * }
  * @param {RoleMapping} roleMapping the role mapping configuration
@@ -120,12 +126,18 @@ export function assignRoles(
   if (!roleMapping) return;
 
   for (const role of Object.keys(roleMapping)) {
-    const claimMap = roleMapping[role];
-    const claim = Object.keys(claimMap)[0];
-    const value = claimMap[claim];
+    const claims = Object.entries(roleMapping[role] ?? {});
 
-    if (payload[claim] && payload[claim] === value) {
+    if (
+      claims.length > 0 &&
+      claims.every(([claim, expected]) => claimMatches(payload[claim], expected))
+    ) {
       user[role] = true;
     }
   }
+}
+
+function claimMatches(actual: unknown, expected: unknown): boolean {
+  if (expected === undefined || expected === null || expected === '') return false;
+  return Array.isArray(actual) ? actual.includes(expected) : actual === expected;
 }
