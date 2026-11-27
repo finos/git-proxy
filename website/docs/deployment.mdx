@@ -11,7 +11,7 @@ For configuration details, see the [Configuration Overview](/docs/configuration/
 ### System Requirements
 
 - **Node.js**: >= 22.13.1, or >= 24.0.0
-- **Git**: Required for cloning and pack operations
+- **Git**: Required for cloning and pack operations (2.31 or later if the [repository cache](#repository-cache) is enabled)
 - **Operating System**: Linux, macOS, or Windows
 
 ### Database Options
@@ -208,6 +208,12 @@ docker run -d \
 
 When using MongoDB, no additional data volumes are needed for GitProxy itself — data is stored in MongoDB.
 
+If the [repository cache](#repository-cache) is enabled, also mount its directory so the cached repositories survive container restarts:
+
+```bash
+  -v $(pwd)/repo-cache:/app/.repo-cache
+```
+
 ---
 
 ## Git Client Configuration
@@ -287,6 +293,40 @@ Switch from the default file-based database to MongoDB for production use:
 - Schedule regular backups of audit data (`mongodump`)
 
 Database migrations run automatically on startup. See [Database Migrations](/docs/migrations) for what changes between releases and when an upgrade needs manual steps.
+
+### Repository Cache
+
+Before running its checks, GitProxy clones the upstream repository for every push. For large repositories this clone dominates the push time. The repository cache keeps a bare mirror of each repository on disk and only fetches the new commits, which makes repeated pushes to the same repository several times faster.
+
+The cache is disabled by default. Enabling it is recommended for production:
+
+```json
+{
+  "cache": {
+    "enabled": true
+  }
+}
+```
+
+| Setting             | Default           | Description                                              |
+| ------------------- | ----------------- | -------------------------------------------------------- |
+| `maxSizeGB`         | `10`              | Least recently used mirrors are removed above this size  |
+| `maxRepositories`   | `50`              | Least recently used mirrors are removed above this count |
+| `cacheDir`          | `./.repo-cache`   | Where the mirrors are stored                             |
+| `gitTimeoutSeconds` | `3600`            | A git command running longer than this fails the push    |
+
+Things to know:
+
+- Each push still authenticates against the upstream with the pushing user's own credentials, so the cache never gives anyone access to a repository they could not clone themselves.
+- Git runs isolated from the GitProxy host's git configuration (`/etc/gitconfig`, `~/.gitconfig`, `~/.netrc`). If your network needs an HTTP proxy or a custom CA, set them with the `HTTPS_PROXY` and `GIT_SSL_CAINFO` environment variables.
+- Requires Git 2.31 or later on the GitProxy host. GitProxy refuses to start with an older Git while the cache is enabled.
+- The first push of a repository is slower than without the cache: the mirror downloads the full history, while the uncached path makes a shallow clone. Every later push only fetches the new commits.
+- Each mirror takes about as much disk as the repository's full history. Size `maxSizeGB` and the disk behind `cacheDir` for the repositories you proxy. A single repository larger than `maxSizeGB` is still cached, and a warning is logged.
+- Raise `gitTimeoutSeconds` if the first clone of your largest repository takes longer than an hour.
+- Keep `cacheDir` outside `./.remote`: GitProxy empties that folder on every start.
+- Do not share one `cacheDir` between several GitProxy instances: concurrent pushes are only coordinated within a single process.
+
+See the [Configuration Reference](/docs/configuration/reference) for all settings.
 
 ### Health Checks
 
