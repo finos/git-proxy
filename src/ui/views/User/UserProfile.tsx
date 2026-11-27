@@ -52,6 +52,7 @@ import {
 
 import { PublicUser } from '../../../db/types';
 import LinkedAccounts from './Components/LinkedAccounts';
+import { loginPathWithRedirect } from '../../utils/postLoginRedirect';
 
 const externalLinkClass =
   'text-sm text-[#0969da] underline underline-offset-2 decoration-[#0969da]/80 hover:text-[#0550ae]';
@@ -116,7 +117,8 @@ export default function UserProfile(): React.ReactElement {
   const [mainTab, setMainTab] = useState<ProfileMainTab>('activity');
   const [activityPage, setActivityPage] = useState<number>(1);
   const { id: idParam } = useParams<{ id?: string }>();
-  const { pathname } = useLocation();
+  const location = useLocation();
+  const { pathname } = location;
   const id = dashboardUserProfileId(pathname) ?? (idParam?.trim() || undefined);
 
   // SSH state
@@ -235,7 +237,7 @@ export default function UserProfile(): React.ReactElement {
   if (userError) {
     const status = (userError as any)?.response?.status;
     if (status === 401 && window.location.pathname === '/dashboard/profile') {
-      return <Navigate to='/login' />;
+      return <Navigate to={loginPathWithRedirect(location)} />;
     }
     return <Danger>{userError.message}</Danger>;
   }

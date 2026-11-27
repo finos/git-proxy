@@ -15,20 +15,22 @@
  */
 
 import { useQuery } from '@tanstack/react-query';
-import { useNavigate } from 'react-router';
+import { useLocation, useNavigate } from 'react-router';
+import { loginPathWithRedirect } from '../utils/postLoginRedirect';
 import { fetchRepoViews } from '../services/repo';
 import { repoQueryKeys } from './repoQueryKeys';
 import { RepoView } from '../types';
 
 export async function fetchRepoViewsList(
   navigate: (path: string, opts?: object) => void,
+  location?: { pathname: string; search: string; hash: string },
 ): Promise<RepoView[]> {
   const result = await fetchRepoViews();
   if (result.success && result.data) {
     return result.data;
   }
   if (result.status === 401) {
-    navigate('/login', { replace: true });
+    navigate(location ? loginPathWithRedirect(location) : '/login', { replace: true });
   }
   throw new Error(result.message || 'Failed to load repositories');
 }
@@ -38,10 +40,11 @@ export async function fetchRepoViewsList(
  */
 export function useRepoViewsListQuery(enabled: boolean) {
   const navigate = useNavigate();
+  const location = useLocation();
 
   return useQuery({
     queryKey: repoQueryKeys.list(),
-    queryFn: () => fetchRepoViewsList(navigate),
+    queryFn: () => fetchRepoViewsList(navigate, location),
     enabled,
   });
 }
