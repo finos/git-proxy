@@ -173,7 +173,7 @@ async function buildBare(bareRepo: string, access: RemoteAccess, timeoutMs: numb
   // Dot-prefixed so getCacheStats() and eviction ignore it while it is built
   const staging = path.join(
     path.dirname(bareRepo),
-    `.staging-${path.basename(bareRepo)}-${crypto.randomUUID()}`,
+    `.staging-${crypto.randomUUID()}`,
   );
 
   try {
