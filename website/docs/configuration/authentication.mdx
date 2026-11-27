@@ -108,6 +108,17 @@ JWT auth also allows authenticating to specific in-app roles by using JWT `claim
 
 In other words, your JWT token provider can define an arbitrary `claim` that can be mapped to any app role you want, such as `admin`, or a custom role such as `ci-only`. This allows for granular access control for automation solutions using GitProxy.
 
+If a role lists several claims, **all** of them must match in order to assign the role. Claims with array values (such as `groups`) match when they contain the expected value. For example, this assigns `admin` only to members of the `gitproxy-admins` group in the `corp` tenant:
+
+```json
+"roleMapping": {
+  "admin": {
+    "groups": "gitproxy-admins",
+    "tenant": "corp"
+  }
+}
+```
+
 Note that if the `expectedAudience` is missing, it will be set to the client ID.
 
 ### Adding your own methods
