@@ -171,10 +171,7 @@ function hostOf(url: string): string {
  */
 async function buildBare(bareRepo: string, access: RemoteAccess, timeoutMs: number): Promise<void> {
   // Dot-prefixed so getCacheStats() and eviction ignore it while it is built
-  const staging = path.join(
-    path.dirname(bareRepo),
-    `.staging-${crypto.randomUUID()}`,
-  );
+  const staging = path.join(path.dirname(bareRepo), `.staging-${crypto.randomUUID()}`);
 
   try {
     await gitOps.clone({
