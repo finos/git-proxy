@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-import React, { useEffect, useState } from 'react';
-import { Routes, Route, Navigate, useLocation, useParams } from 'react-router';
+import React, { useEffect, useRef, useState } from 'react';
+import { Routes, Route, Navigate, useLocation, useNavigate, useParams } from 'react-router';
 import Navbar from '../components/Navbars/Navbar';
 import Footer from '../components/Footer/Footer';
 import NotFound from '../views/Extras/NotFound';
@@ -26,6 +26,7 @@ import { getUser } from '../services/user';
 import { Route as RouteType } from '../types';
 import { PublicUser } from '../../db/types';
 import { ErrorBoundary } from '../components/ErrorBoundary/ErrorBoundary';
+import { consumeSsoLoginRedirect } from '../utils/postLoginRedirect';
 import {
   dashboardColumnClass,
   dashboardColumnFullWidthClass,
@@ -42,8 +43,10 @@ interface ActivitiesProps {
 
 const App = ({ ...rest }: ActivitiesProps) => {
   const [user, setUser] = useState<PublicUser | null>(null);
+  const hasConsumedSsoLoginRedirect = useRef(false);
   const { id } = useParams<{ id?: string }>();
   const { pathname } = useLocation();
+  const navigate = useNavigate();
 
   const switchRoutes = (
     <Routes>
@@ -62,6 +65,14 @@ const App = ({ ...rest }: ActivitiesProps) => {
   useEffect(() => {
     void getUser(undefined, setUser);
   }, [id]);
+
+  useEffect(() => {
+    if (!user || user.mustChangePassword || hasConsumedSsoLoginRedirect.current) return;
+
+    hasConsumedSsoLoginRedirect.current = true;
+    const destination = consumeSsoLoginRedirect();
+    if (destination) navigate(destination, { replace: true });
+  }, [navigate, user]);
 
   const isMapRoute = () => window.location.pathname === '/dashboard/maps';
 

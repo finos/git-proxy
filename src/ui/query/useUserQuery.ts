@@ -15,12 +15,13 @@
  */
 
 import { useQuery } from '@tanstack/react-query';
-import { useNavigate } from 'react-router';
+import { useLocation, useNavigate } from 'react-router';
 import axios from 'axios';
 import { getAxiosConfig } from '../services/auth';
 import { getBaseUrl, getApiV1BaseUrl } from '../services/apiConfig';
 import { userQueryKeys } from './userQueryKeys';
 import { PublicUser } from '../../db/types';
+import { loginPathWithRedirect } from '../utils/postLoginRedirect';
 
 async function fetchUser(id: string | null | undefined): Promise<PublicUser> {
   const baseUrl = await getBaseUrl();
@@ -32,6 +33,7 @@ async function fetchUser(id: string | null | undefined): Promise<PublicUser> {
 
 export function useUserQuery(id: string | null | undefined) {
   const navigate = useNavigate();
+  const location = useLocation();
   const queryKey = userQueryKeys.detail(id ?? 'profile');
 
   return useQuery<PublicUser>({
@@ -42,7 +44,7 @@ export function useUserQuery(id: string | null | undefined) {
       } catch (error: unknown) {
         const status = (error as any)?.response?.status;
         if (status === 401) {
-          navigate('/login', { replace: true });
+          navigate(loginPathWithRedirect(location), { replace: true });
         }
         throw error;
       }

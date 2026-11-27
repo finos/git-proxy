@@ -16,6 +16,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router';
+import { loginPathWithRedirect } from '../utils/postLoginRedirect';
 import { getPushes } from '../services/git-push';
 import type { GetPushesQuery } from '../services/git-push';
 import { pushQueryKeys } from './pushQueryKeys';
@@ -32,7 +33,7 @@ export function usePushesQuery(filters: GetPushesQuery = {}, enabled = true) {
         return result.data;
       }
       if (result.status === 401) {
-        navigate('/login', { replace: true });
+        navigate(loginPathWithRedirect(window.location), { replace: true });
       }
       throw new Error(result.message || 'Failed to load pushes');
     },

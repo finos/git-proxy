@@ -15,7 +15,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { useNavigate, Navigate } from 'react-router';
+import { Navigate, useLocation } from 'react-router';
 import { Button, Flash, FormControl, Stack, Text, TextInput } from '@primer/react';
 import { MarkGithubIcon } from '@primer/octicons-react';
 import axios, { AxiosError } from 'axios';
@@ -23,6 +23,7 @@ import logo from '../../assets/img/git-proxy.png';
 import { useAuth } from '../../auth/AuthProvider';
 import { getBaseUrl } from '../../services/apiConfig';
 import { getAxiosConfig, processAuthError } from '../../services/auth';
+import { getPostLoginRedirect, setSsoLoginRedirect } from '../../utils/postLoginRedirect';
 
 interface LoginResponse {
   username: string;
@@ -30,7 +31,7 @@ interface LoginResponse {
 }
 
 const Login = () => {
-  const navigate = useNavigate();
+  const { search } = useLocation();
   const authContext = useAuth();
 
   const [username, setUsername] = useState<string>('');
@@ -54,7 +55,7 @@ const Login = () => {
 
       // Automatically login if only one non-username/password method is enabled
       if (!usernamePasswordMethod && otherMethods.length === 1) {
-        await handleAuthMethodLogin(otherMethods[0]);
+        await startSsoLogin(otherMethods[0]);
       }
     };
     fetchAuthConfig();
@@ -77,6 +78,11 @@ const Login = () => {
     window.location.href = `${baseUrl}/api/auth/${authMethod}`;
   }
 
+  function startSsoLogin(authMethod: string): Promise<void> {
+    setSsoLoginRedirect(getPostLoginRedirect(search));
+    return handleAuthMethodLogin(authMethod);
+  }
+
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault();
     setIsLoading(true);
@@ -85,14 +91,15 @@ const Login = () => {
       const baseUrl = await getBaseUrl();
       const loginUrl = `${baseUrl}/api/auth/login`;
       await axios.post<LoginResponse>(loginUrl, { username, password }, getAxiosConfig());
+      setSsoLoginRedirect(null);
       window.sessionStorage.setItem('git.proxy.login', 'success');
       setMessage('Success!');
-      setSuccess(true);
       await authContext.refreshUser();
-      navigate(0);
+      setSuccess(true);
     } catch (error: unknown) {
       if (error instanceof AxiosError) {
         if (error.response?.status === 307) {
+          setSsoLoginRedirect(null);
           window.sessionStorage.setItem('git.proxy.login', 'success');
           setGitAccountError(true);
         } else if (error.response?.status === 403) {
@@ -113,7 +120,8 @@ const Login = () => {
   }
 
   if (success) {
-    return <Navigate to='/dashboard/repo' />;
+    const destination = authContext.user?.mustChangePassword ? null : getPostLoginRedirect(search);
+    return <Navigate to={destination ?? '/dashboard/repo'} />;
   }
 
   const showErrorFlash = Boolean(message.trim());
@@ -219,7 +227,7 @@ const Login = () => {
                         block
                         disabled={isLoading}
                         data-test={`${am}-login`}
-                        onClick={() => handleAuthMethodLogin(am)}
+                        onClick={() => startSsoLogin(am)}
                         leadingVisual={isGithub ? MarkGithubIcon : undefined}
                       >
                         Continue with {upper}

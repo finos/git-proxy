@@ -47,6 +47,21 @@ describe('Login page', () => {
     cy.url().should('include', '/dashboard/repo');
   });
 
+  it('should restore a protected deep link after valid login', () => {
+    const deepLink = '/dashboard/profile?source=deep-link#activity';
+
+    cy.logout();
+    cy.visit(deepLink);
+    cy.location('pathname').should('eq', '/login');
+
+    cy.get('[data-test="username"]').type('admin');
+    cy.get('[data-test="password"]').type('admin');
+    cy.get('[data-test="login"]').click();
+
+    cy.get('[data-testid="profile-name"]').should('contain', 'admin');
+    cy.url().should('eq', new URL(deepLink, Cypress.config('baseUrl')).href);
+  });
+
   it('should show an error flash on invalid login', () => {
     cy.get('[data-test="username"]').type('wronguser');
     cy.get('[data-test="password"]').type('wrongpass');
