@@ -48,7 +48,7 @@ The mirror lives at `<cacheDir>/<host>__<project>__<repo>-<hash>`, e.g. `github.
 
 Git commands on the mirror use `--git-dir`, so a broken mirror inside another repository (such as the GitProxy checkout around `./.repo-cache`) is never mistaken for that repository.
 
-Every clone into the cache is done in a dot-prefixed staging folder (`.staging-<key>-<uuid>`) and only moved into place once it succeeded, so a failed or interrupted clone never leaves a half-written mirror behind. Staging folders are ignored by the cache statistics and by eviction, and leftovers from a crash are removed at startup.
+Every clone into the cache is done in a dot-prefixed staging folder (`.staging-<uuid>`) and only moved into place once it succeeded, so a failed or interrupted clone never leaves a half-written mirror behind. Staging folders are ignored by the cache statistics and by eviction, and leftovers from a crash are removed at startup.
 
 The cache lives outside `./.remote`, which GitProxy empties on every start, so the mirrors survive restarts. A `cacheDir` configured inside `./.remote` logs a warning at startup.
 
