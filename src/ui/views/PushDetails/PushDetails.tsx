@@ -16,7 +16,7 @@
 
 import React, { useCallback, useState, useEffect, useMemo } from 'react';
 import { DateTime } from 'luxon';
-import { Link, useNavigate, useParams, useSearchParams } from 'react-router';
+import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'react-router';
 import { Banner, Button, PageHeader, Spinner, Stack, StateLabel, Text } from '@primer/react';
 import { GitProxyUnderlinePanels } from '../../components/GitProxyUnderlineTabs';
 import type { StateLabelProps } from '@primer/react';
@@ -51,6 +51,7 @@ import {
   resolveActivityRepoDisplay,
 } from '../PushRequests/activityTabFilters';
 import { canonicalRemoteUrl } from '../../utils/parseGitRemoteUrl';
+import { loginPathWithRedirect } from '../../utils/postLoginRedirect';
 
 const PUSH_DETAILS_TAB_VALUES = ['commits', 'files', 'steps'] as const;
 type PushDetailsTab = (typeof PUSH_DETAILS_TAB_VALUES)[number];
@@ -132,6 +133,7 @@ function CanceledPushBanner({ push }: { push: PushActionView }): React.ReactElem
 
 const PushDetails = () => {
   const { id } = useParams<{ id: string }>();
+  const location = useLocation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [message, setMessage] = useState('');
@@ -168,7 +170,7 @@ const PushDetails = () => {
 
   const handleActionFailure = (result: ServiceResult) => {
     if (result.status === 401) {
-      navigate('/login', { replace: true });
+      navigate(loginPathWithRedirect(location), { replace: true });
       return;
     }
     setMessage(result.message || 'Something went wrong...');

@@ -15,10 +15,11 @@
  */
 
 import React, { useEffect, useState } from 'react';
-import { Navigate } from 'react-router';
+import { Navigate, useLocation } from 'react-router';
 import { Spinner, Text } from '@primer/react';
 import { useAuth } from '../../auth/AuthProvider';
 import { setUIRouteAuthData } from '../../services/config';
+import { loginPathWithRedirect } from '../../utils/postLoginRedirect';
 import { UIRouteAuth } from '../../../config/generated/config';
 
 interface RouteGuardProps {
@@ -28,6 +29,7 @@ interface RouteGuardProps {
 
 const RouteGuard = ({ component: Component, fullRoutePath }: RouteGuardProps) => {
   const { user, isLoading } = useAuth();
+  const location = useLocation();
 
   const [loginRequired, setLoginRequired] = useState(false);
   const [adminOnly, setAdminOnly] = useState(false);
@@ -59,7 +61,7 @@ const RouteGuard = ({ component: Component, fullRoutePath }: RouteGuardProps) =>
   }
 
   if (loginRequired && !user) {
-    return <Navigate to='/login' />;
+    return <Navigate to={loginPathWithRedirect(location)} />;
   }
 
   if (user?.mustChangePassword) {
