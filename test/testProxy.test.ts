@@ -59,6 +59,11 @@ vi.mock('../src/config', () => ({
   getMaxPackSizeBytes: vi.fn(() => 500 * 1024 * 1024),
   getServerPort: vi.fn(() => 8000),
   getHttpsServerPort: vi.fn(() => 8443),
+  isCacheEnabled: vi.fn(() => false),
+}));
+
+vi.mock('../src/proxy/processors/push-action/cache-manager', () => ({
+  cacheManager: { prepare: vi.fn() },
 }));
 
 vi.mock('../src/db', () => ({
@@ -93,6 +98,7 @@ import * as config from '../src/config';
 import * as db from '../src/db';
 import * as plugin from '../src/plugin';
 import * as fs from 'fs';
+import { cacheManager } from '../src/proxy/processors/push-action/cache-manager';
 
 // Import the class under test
 import { Proxy } from '../src/proxy/index';
@@ -201,6 +207,20 @@ describe('Proxy', () => {
       await proxy.start();
       const app = proxy.getExpressApp();
       expect(app).toBeTruthy();
+    });
+
+    it('should prepare the repository cache when it is enabled', async () => {
+      vi.mocked(config.isCacheEnabled).mockReturnValueOnce(true);
+
+      await proxy.start();
+
+      expect(cacheManager.prepare).toHaveBeenCalledOnce();
+    });
+
+    it('should leave the repository cache alone when it is disabled', async () => {
+      await proxy.start();
+
+      expect(cacheManager.prepare).not.toHaveBeenCalled();
     });
 
     it('should set up express app after starting', async () => {

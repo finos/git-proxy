@@ -67,6 +67,14 @@ describe('Generated Config (QuickType)', () => {
     );
   });
 
+  describe('cache configuration', () => {
+    it('should accept enabling the cache without the other settings', () => {
+      const config = { cache: { enabled: true } };
+
+      expect(Convert.toGitProxyConfig(JSON.stringify(config)).cache).toEqual(config.cache);
+    });
+  });
+
   describe('authentication secrets', () => {
     // password / clientSecret are optional in the schema because they can be supplied
     // via GIT_PROXY_LDAP_PASSWORD / GIT_PROXY_OIDC_CLIENT_SECRET. The validator (used by

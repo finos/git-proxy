@@ -32,6 +32,7 @@ import {
   getServerPort,
   getHttpsServerPort,
   getSSHConfig,
+  isCacheEnabled,
 } from '../config';
 import { addUserCanAuthorise, addUserCanPush, createRepo, getRepos, runMigrations } from '../db';
 import { PluginLoader } from '../plugin';
@@ -45,6 +46,7 @@ import {
 } from '../eventHandlers/dispatcher';
 import { EventHandlerLoader } from '../eventHandlers/loader';
 import SSHServer from './ssh/server';
+import { cacheManager } from './processors/push-action/cache-manager';
 
 interface ServerOptions {
   inflate: boolean;
@@ -80,6 +82,10 @@ export class Proxy {
     }
     console.log('Creating the .remote dir...');
     fs.mkdirSync(remoteDir);
+
+    if (isCacheEnabled()) {
+      await cacheManager.prepare();
+    }
 
     await runMigrations();
 

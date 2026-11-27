@@ -30,6 +30,10 @@ Here is a minimal example:
 
 The full configuration reference can be found at the [Reference page](/docs/configuration/reference/).
 
+:::tip
+For production, consider enabling the repository cache (`"cache": { "enabled": true }`), which makes repeated pushes to large repositories much faster. See [Repository Cache](/docs/deployment#repository-cache).
+:::
+
 ### Alter the configuration path
 
 To specify a different file name for your GitProxy configuration, use:
